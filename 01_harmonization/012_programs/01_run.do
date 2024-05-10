@@ -7,7 +7,10 @@
 	do "${clone}/01_harmonization/012_programs/0191_label_values.ado"
 
 
-* TASK 01_HARMONIZATION: Harmonizes GLD data and creates descriptive statistics (in datalibweb or input path)	
+* TASK 01_HARMONIZATION: Harmonizes GLD data and creates descriptive statistics (in datalibweb or input path)
+	* Subtask 010:
+	//do "${clone}/01_harmonization/012_programs/010_catalog_dl.do"
+	
 	* Subtask 011: Harmonize any problematic variables from EAP LFS (WIP)
 	* This will come for new incoming data 
 	do "${clone}/01_harmonization/012_programs/011_raw_to_eapce.do"

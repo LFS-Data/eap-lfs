@@ -26,6 +26,10 @@
 				local outputdir "`inputdir'/harmonized"
 			}
 		use "`inputdir'/`inputfile'", clear
+		
+		if "`cnt'" == "PHL" | "`cnt'" == "IDN" {
+			append using "`inputdir'/LFS_`cnt'.dta"
+		}
 		cap drop migrated_*
 		
 		* Suspect about harmonized data in IDN 1997 and 2012, remove for now 
@@ -50,12 +54,12 @@
 		tostring isco08, replace
 		drop isco68
 		replace isco08 = occup_isco if isco_version=="isco_2008"
-		ren isco08 isco08_4 
+		cap ren isco08 isco08_4 
 		lab var isco08_4 "ISCO-08 at 4 digit level"
 		*</_isco08_4_>*
 
 		*<_isco08_2_>*		
-		gen isco08_2 = substr(isco084,1,2)
+		cap gen isco08_2 = substr(isco084,1,2)
 		lab var isco08_2 "ISCO-08 at 2-digit "
 		*</_isco08_2_>*
 		

@@ -126,7 +126,7 @@
 	gen code = "PHL"
 	gen harmonization = "EAP-LFS"
 	gen module = "LFS"
-
+	gen weight = pufpwgtprv
 	gen isic_version = "isic_4"
 	gen industrycat_isic = pufc16_pkb
 	*<_industrycat10_>		
@@ -164,6 +164,13 @@
 	gen isco08_2 = occup_isco 
 	gen isco08_4 = occup_isco + "00"
 	
+	* Occupation Skill (occup_skill)
+	gen occup_skill = . 
+	destring occup_isco, gen(temp)
+	replace occup_skill = 1 if temp >= 90
+	replace occup_skill = 2 if temp >= 40 & temp < 90
+	replace occup_skill = 3 if temp >= 10 & temp < 40
+	drop temp
 	* Male 
 	gen male = pufc04_sex
 	recode male (2=0) (1=1)
