@@ -9,7 +9,8 @@
 	*----------------------------------------------------*
 	local disaggregations "all male occup occup_skill educat4 agegrp2 empstat formal emprt higher_educ industrycat10 industrycat4 industrycat5 agegrp ocusec marital " // 
 	local factortabs "emprt formal occup occup_skill lstatus educat4 industrycat10 industrycat4 industrycat5 empstat" //  
-	local meantabs "annual_wage1"
+	local meantabs "annual_wage1 hourly_wage*"
+	local sumtabs "obs_* weight"
 	local countries "MYS PHL IDN MNG VNM THA"  //  
 	local measure "mean median" // 
 	*----------------------------------------------------*
@@ -121,11 +122,17 @@
 			
 			noi di "Step 2 Done: Merge CPI from WDI"
 					* Save the file 
-					export excel using "${clone}/03_output/tabstats_`m'.xlsx", `saveopt' sheet("`cnt'", modify) cell(A`i')
+					export excel using "${clone}/01_harmonization/013_outputs/tabstats_`m'.xlsx", `saveopt' sheet("`cnt'", modify) cell(A`i')
 					
 				* Next subgroup				
 				restore
+				if "`agg'"=="all" {
+				local i= `i'+`num+1'
+				}
+				else {
 				local i= `i'+`num'
+	
+				}
 				noi di "Finished aggregating `agg'"
 				}
 				else {

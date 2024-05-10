@@ -7,6 +7,7 @@
 	*--------------------------------------------------------*
 	* Malaysia												 *
 	*--------------------------------------------------------*
+	use "${msteams}/Combined/Harmonized/MYS/SWScombined_uncleaned.dta", clear
 
 	use "${msteams}/Combined/Harmonized/MYS/SWScombined_uncleaned.dta", clear
 	rename *, lower
@@ -154,7 +155,7 @@
 	*--------------------------------------------------------*
 	//use "${msteams}/Combined/Harmonized/VNM/LFS_VNM_Harmonized_Limited.dta",clear
 	
-	use "${msteams}/Combined/Harmonized/VNM/VNM_LFS_master.dta",clear
+	use "${msteams}/Combined/Harmonized/VNM/VNM_LFS_master_April2024.dta",clear
 	gen code = "VNM"
 	label var code "Country code"
 	label var year "Year of survey"

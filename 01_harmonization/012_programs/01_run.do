@@ -3,10 +3,7 @@
 *  The final output includes harmonized datasets and summary statistics
 *==============================================================================*
 
-* TASK 01_HARMONIZATION: Harmonizes GLD data and creates descriptive statistics (in datalibweb or input path)
-	* Subtask 01: Download microdata from dlw 
-	do "${clone}/01_harmonization/012_programs/01_run.do"
-	
+* TASK 01_HARMONIZATION: Harmonizes GLD data and creates descriptive statistics (in datalibweb or input path)	
 	* Subtask 011: Harmonize any problematic variables from EAP LFS (WIP)
 	* This will come for new incoming data 
 	do "${clone}/01_harmonization/012_programs/011_raw_to_eapce.do"

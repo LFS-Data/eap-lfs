@@ -5,7 +5,7 @@
 *- 
 *------------------------------------------------------------------*
 
-	//local countries "MYS" // PHL IDN MNG VNM THA 
+	local countries "PHL IDN MNG VNM THA MYS" // PHL IDN MNG VNM THA 
 	cd "${clone}\01_harmonization\011_rawdata\OTHER"
 	local files: dir . files "*dta"
 		*----------------------------------------------------*
@@ -35,7 +35,7 @@
 		
 		*Subset thailand, datset too big
 		if "`cnt'" == "THA" {
-		keep if inlist(year, 1985, 1990, 1995, 2000, 2005, 2010, 2015,2020,2021,2022)
+		//keep if inlist(year, 1985, 1990, 1995, 2000, 2005, 2010, 2015,2020,2021,2022)
 		}
 		
 		noi di "Reading `cnt'"
@@ -155,7 +155,7 @@
 		* Wage to Hourly		
 		destring hourly_wage*, replace
 		foreach w in 1 2 {
-		replace hourly_wage`w' = (whours_`w'*52)/annual_wage`w'
+		replace hourly_wage`w' = annual_wage`w'/(whours_`w'*52)
 		}
 		
 		replace hourly_wage2 = 0 if hourly_wage2 == .
