@@ -5,7 +5,7 @@
 *- 
 *------------------------------------------------------------------*
 
-	local countries "" //"MYS PHL IDN MNG VNM THA"  
+	//local countries "MYS" // PHL IDN MNG VNM THA 
 	cd "${clone}\01_harmonization\011_rawdata\OTHER"
 	local files: dir . files "*dta"
 		*----------------------------------------------------*
@@ -17,6 +17,8 @@
 			local inputdir "${clone}/01_harmonization/011_rawdata/`cnt'"
 			local inputfile "gld_panel_`cnt'.dta"
 			local outputdir "`inputdir'"
+					use "`inputdir'/`inputfile'", clear
+
 			}
 			else {
 				local inputdir "${clone}/01_harmonization/011_rawdata/OTHER"
@@ -54,21 +56,35 @@
 		else {
 			clonevar emprt = lstatus 
 			replace emprt = . if lstatus == 3
-			gen higher_educ = 1 if educat4 > 3
-			replace higher_educ = 0 if educat4 <= 3
+
 		}
 		
-
+		*<_educat3_>		
+		gen educat3 = educat4
+		replace educat3 = 1 if educat4==2
+		replace educat3 = 2 if educat4==3
+		replace educat3 = 3 if educat4==4
+		la de lbleducat3 1 "Primary or Below" 2 "Secondary" 3 "Post-secondary"
+		label values educat3 lbleducat3
+		*</_educat3_>		
+		
+		*<_higher_educ_>			
+		gen higher_educ = 1 if educat4 > 3
+		replace higher_educ = 0 if educat4 <= 3
 		lab var higher_educ "Higher Education"
 		label define highereduc 0 "No" 1 "Yes", modify
 		label values higher_educ highereduc
-			
+		*</_higher_educ_>			
+		
+		*<_industrycat5_>			
 		*Create a new indsutry variable that separates manufacutring
 		gen industrycat5 = industrycat4 
 		replace industrycat5 = 5 if industrycat10 == 3
 		label define inducat5 1 "Agriculture" 2 "Industry" 3 "Services" 4 "Other" 5 "Manufacturing", modify
 		label values industrycat5 inducat5
+		*</_industrycat5_>	
 		
+		*<_agegroup_>					
 		* Create an age group variable 
 		gen agegroup = "15 to 19" if age >= 15 & age <= 18
 		replace agegroup = "20 to 29" if age  >= 19 & age <= 29
@@ -79,21 +95,30 @@
 		replace agegroup = "65+" if age > 65
 		lab var agegroup "Age Group"
 		encode agegroup, gen(agegrp)
+		*</_agegroup_>				
 		
+		*<_agegroup2_>					
 		* Young, middle, and older age variable 
 		gen agegroup2 = "15 to 24" if age >= 15 & age <= 24
 		replace agegroup2 = "25 to 54" if age >= 25 & age <= 54
 		replace agegroup2 = "55+" if age >= 55
 		lab var agegroup2 "Age Group"
 		encode agegroup2, gen(agegrp2)
+		*</_agegroup2_>					
 		
 		* If variable doesnt exist (for example, south africa)
 		cap gen wage_no_compen = .
 		cap gen unitwage = .
+		
+
+		*<_annual_wage_>					
 		* Wage to Annual 
+		destring wage_* unitwa* whour*, replace
 		rename (wage_no_compen unitwage whours) (wage_no_compen_1 unitwage_1 whours_1)
 		gen annual_wage1 = wage_no_compen_1
+		replace annual_wage1 = . if annual_wage1 == 0
 		cap replace unit_wage_2 = 0 if unit_wage_2 == .
+		
 
 		cap gen annual_wage2 = wage_no_compen_2
 		
@@ -101,8 +126,12 @@
 			cap gen annual_wage2 = 0 
 			cap gen wage_no_compen_2 = 0
 			cap gen unitwage_2 = 0 
+			cap gen whours_2 = 0
 		}
 		
+		cap gen whours_2 = 0
+		destring whour*, replace
+
 		destring annual_wage* wage_no_*, replace
 		foreach w in 1 2 {
 		replace annual_wage`w' = (wage_no_compen_`w')*365 if unitwage_`w' == 1 // daily case
@@ -118,16 +147,45 @@
 		replace annual_wage2 = 0 if annual_wage2 == .
 		
 		gen annual_wage =(annual_wage1 + annual_wage2)
+		*</_annual_wage_>					
+		
+		*<_hourly_wage_>	
+		gen hourly_wage1 = .
+		gen hourly_wage2 = .
+		* Wage to Hourly		
+		destring hourly_wage*, replace
+		foreach w in 1 2 {
+		replace hourly_wage`w' = (whours_`w'*52)/annual_wage`w'
+		}
+		
+		replace hourly_wage2 = 0 if hourly_wage2 == .
+		
+		gen hourly_wage =(hourly_wage1 + hourly_wage2)
+		*</_hourly_wage_>	
 
+		*<_obs_annual_>	
+		gen obs_annual = 1 if annual_wage1 != .
+		replace obs_annual = 0 if obs_annual == .
+		lab var obs_annual "Whether data on annual wage exists"
+		*</_obs_annual_>	
+		
+		*<_obs_hourly_>	
+		gen obs_hourly = 1 if hourly_wage1 != .
+		replace obs_hourly = 0 if obs_hourly == .
+		lab var obs_hourly "Whether data on hourly wage exists"
+		*</_obs_hourly_>	
 
+		*<_formal_>	
 		* formal vs informal var 
 		destring empstat, replace 
 	
 		gen formal = 1 if inlist(empstat, 1,3)
-		replace formal = 0 if inlist(empstat, 2,4)
+		replace formal = 0 if inlist(empstat, 2)
+		replace formal = 2 if inlist(empstat,4)
 		lab var formal "Formal employment"
-		label define form 0 "Informal" 1 "Formal", modify
+		label define form 0 "Informal" 1 "Formal" 2 "Self-Employed", modify
 		label values formal form
+		*</_formal_>	
 
 		missings dropvars, force
 		

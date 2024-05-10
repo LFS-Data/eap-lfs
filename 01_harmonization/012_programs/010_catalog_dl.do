@@ -1,25 +1,31 @@
 *---------------------------------------------------------------- *
 *- Task: Download list of interested microdata from datalibweb and save to local computer 
 *- Last Modified: Yi Ning Wong on 2/26/2024
-*- eduanalytics@worldbank.org
+*- Note: This routine requires datalibweb to be installed on the WB computer, to be able to retrieve data harmonized by teams.
 *------------------------------------------------------------------*
 
-	global overwrite 0
+	global overwrite 0 // 	Set 1 if you are running the data from scratch or would like to check for updates in dlw.
+
+	cap which datalibweb
+	if _rc != 0 {
+    noi disp as error _n `"{phang}Datalibweb package not found. Please go to "datalibweb/" and download the package to your ado folder. This will only work for WB computers. {p_end}"'
+    error 2222
+  }
 	
 	* Download cpi data
 	if ${overwrite} == 1 {
 	* Note: datalibweb has cpi (2017=100) compiled from household surveys (GMD) which is more granular. However, we don't currently need it and will use WDI instead (2010=100)
+	* Commented below is the command to retrieve this.
 	//datalibweb, country(Support) year(2005) type(GMD) surveyid(Support_2005_CPI_v10_M_v01_A_GMD) filename(Support_2005_CPI_v10_M_v01_A_GMD_CPIICP.dta)
 	
-	//wbopendata, indicator(fp.cpi.totl) long
-	//keep if year >= 1985
+	wbopendata, indicator(fp.cpi.totl) long
+	keep if year >= 1985
 	
-	//save "${clone}/01_harmonization/011_rawdata/cpiicp.dta", replace 
+	save "${clone}/01_harmonization/011_rawdata/cpiicp.dta", replace 
 
 	
 	clear
 	* Save an empty file to append the surveys to
-	
 	save "${clone}/01_harmonization/011_rawdata/gld_panel_IDN.dta", replace emptyok
 	save "${clone}/01_harmonization/011_rawdata/MNG/gld_panel_MNG.dta", replace emptyok
 	save "${clone}/01_harmonization/011_rawdata/PHL/gld_panel_PHL.dta", replace emptyok
@@ -30,17 +36,12 @@
 	* -- Step 1. Read the Catalog of all interested Data -- *
 	import excel "${clone}/00_documentation/EAP_Data_catalog.xlsx", clear firstrow sheet("Catalog_GLD") cellrange(A2:I247)
 
-	* Running the other surveys, we dont care abut the main ones
-	keep if country == "IDN" | country == "MNG" | country == "PHL" //"THA" // | country == "IDN" | country == "MNG" | country == "PHL"
 	keep if datalibweb == 1 & Public == "Yes" 
-	
-	drop if inlist(country, "EGY")
-	drop if inlist(country, "GEO")
 
 	* -- Step 2. Run each of the surveys in the catalog -- *
 	levelsof id, local(surveyid)
 	
-noi	foreach survey of local surveyid {
+	noi	foreach survey of local surveyid {
 	
 		* makes sure we check all of the files 
 		preserve 
@@ -158,7 +159,7 @@ noi	foreach survey of local surveyid {
 			}
 		}
 		
-			
+		* For now, we're only interested in getting panel data from EAP countries in GLD
 		if ("`cnt'" == "THA" | "`cnt'" == "IDN" | "`cnt'" == "MNG" | "`cnt'" == "PHL") {
 				
 		* -- Step 3: Append to existing dataset -- *
@@ -197,7 +198,7 @@ noi	foreach survey of local surveyid {
 		}
 		else {
 		* End of if else OTHER countries
-		* Won't get saved if we dont find the dta
+		* Won't get saved if we dont find the data
 		cap save "`outputdir'/`survey'", replace
 		}
 		* Next surveyid
@@ -205,8 +206,4 @@ noi	foreach survey of local surveyid {
 		}
 
 
-		
-	/*
-	else {
-		exit
-	}
+	

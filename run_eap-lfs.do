@@ -21,6 +21,7 @@ qui {
 *-------------------------------------------------------------------------------
 
 * TASK 01_HARMONIZATION: Harmonizes GLD data and creates descriptive statistics (in datalibweb or input path)
+	do "${clone}/01_harmonization/01_run.do"
  
 * TASK 02_ONET: Creates digital score using ONET data and harmonizes SOC to ISCO code
 

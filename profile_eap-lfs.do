@@ -36,9 +36,9 @@ qui {
   * 2) Define user-dependant path for local clone repo
   *-----------------------------------------------------------------------------
   * Change here only if this repo is renamed
-  local this_repo     "eap-ceo"
+  local this_repo     "eap-lfs"
   * Change here only if this master run do-file is renamed
-  local this_run_do   "run_eap-ceo.do"
+  local this_run_do   "run_eap-lfs.do"
   
   * msteams global 
   * For now it will check 2 defaults 
@@ -114,7 +114,7 @@ qui {
   * 3) Download and install required user written ado's
   *-----------------------------------------------------------------------------
   * Fill this list will all user-written commands this project requires
-  local user_commands fs pv seq mdesc alphawgt touch labmv fre egenmore unique missings
+  local user_commands fs pv seq mdesc alphawgt touch labmv fre egenmore unique missings wbopendata labutil
 
   * Loop over all the commands to test if they are already installed, if not, then install
   foreach command of local user_commands {
