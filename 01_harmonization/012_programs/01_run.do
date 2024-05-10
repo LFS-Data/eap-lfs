@@ -2,6 +2,10 @@
 * 01 RUN: Run the tasks that come from this routine
 *  The final output includes harmonized datasets and summary statistics
 *==============================================================================*
+* Make sure all the ados here are defined 
+	do "${clone}/01_harmonization/012_programs/019_masco_isco.ado"
+	do "${clone}/01_harmonization/012_programs/0191_label_values.ado"
+
 
 * TASK 01_HARMONIZATION: Harmonizes GLD data and creates descriptive statistics (in datalibweb or input path)	
 	* Subtask 011: Harmonize any problematic variables from EAP LFS (WIP)

@@ -11,6 +11,9 @@
 	* Globals to Each CNT									 *
 	*--------------------------------------------------------*
 	global vnm_raw "${msteams}/VNM/Raw ID"
+	global vnm_raw "${msteams}/VNM/Raw ID"
+	global vnm_raw "${msteams}/VNM/Raw ID"
+
 	/*
 	*--------------------------------------------------------*
 	* Vietnam	

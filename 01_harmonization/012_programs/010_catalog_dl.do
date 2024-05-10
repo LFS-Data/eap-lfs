@@ -166,10 +166,8 @@
 		cap drop relationcs 
 		
 		cap tostring *, format("%12.0f") replace
-		noi di "a"
 		* This was not properly harmonized, make it consistent
 		cap destring year, replace
-		noi di "b"
 		cap destring occup_skill, replace
 		cap destring wage_no_compen, replace
 		cap destring whours, replace
@@ -186,13 +184,14 @@
 		cap destring int_month, replace
 		cap destring migrated_years, replace
 		cap destring unempldur_*, replace
-		
-		* PHL
 		cap destring psu, replace
 		cap destring relationcs, replace	
 		cap drop migrated_from_code
+		
+		gen module = "LFS"
 
-
+		cap drop country B id module Public datalibweb eap_ceo
+		
 		append using "${clone}/01_harmonization/011_rawdata/`cnt'/gld_panel_`cnt'.dta"
 		save "${clone}/01_harmonization/011_rawdata/`cnt'/gld_panel_`cnt'.dta", replace	
 		}

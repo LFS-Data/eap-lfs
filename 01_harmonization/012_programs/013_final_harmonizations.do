@@ -17,7 +17,7 @@
 			local inputdir "${clone}/01_harmonization/011_rawdata/`cnt'"
 			local inputfile "gld_panel_`cnt'.dta"
 			local outputdir "`inputdir'"
-					use "`inputdir'/`inputfile'", clear
+
 
 			}
 			else {
@@ -26,6 +26,7 @@
 				local outputdir "`inputdir'/harmonized"
 			}
 		use "`inputdir'/`inputfile'", clear
+		cap drop migrated_*
 		
 		* Suspect about harmonized data in IDN 1997 and 2012, remove for now 
 		if "`cnt'" == "IDN" {
@@ -40,11 +41,46 @@
 		
 		noi di "Reading `cnt'"
 	
+		* Harmonize across ISCO versions 
+		*<_isco08_4_>*
+		iscogen isco08 = isco08(occup_isco) if isco_version=="isco_1988", from(isco88) nolabel
+		iscogen isco68 = isco08(occup_isco) if isco_version=="isco_1968", from(isco68) nolabel
 
+		replace isco08 = isco68 if isco_version=="isco_1968"
+		tostring isco08, replace
+		drop isco68
+		replace isco08 = occup_isco if isco_version=="isco_2008"
+		ren isco08 isco08_4 
+		lab var isco08_4 "ISCO-08 at 4 digit level"
+		*</_isco08_4_>*
+
+		*<_isco08_2_>*		
+		gen isco08_2 = substr(isco084,1,2)
+		lab var isco08_2 "ISCO-08 at 2-digit "
+		*</_isco08_2_>*
+		
+		*<_industrycat_isic2_>*		
+		gen industrycat_isic2 = substr(industrycat_isic,1,2)
+		lab var industrycat_isic2 "ISIC at 2 digit"
+		*</_industrycat_isic2_>*
+
+		*<_industrycat_isic2_2_>*		
+		gen industrycat_isic2_2 = substr(industrycat_isic_2,1,2)
+		lab var industrycat_isic2_2 "Second ISIC at 2 digit"
+		*</_industrycat_isic2_2_>*
+		
 		* Create a national level variable (no disaggregations)
 		gen all2 = "National"
 		lab var all2 "National"
 		encode all2, gen(all) 
+		
+		* Tag all the modules as LFS surveys, except for malaysia 
+		cap gen module = "LFS" if module != "SWS"
+		* Get a weight as an outcome variable that can be used to proxy employment
+		*<_weight_emp_>	
+		gen weight_emp = weight if module != "SWS"
+		*</_weight_emp_>	
+
 	
 		* Small cleaning
 		destring year age, replace

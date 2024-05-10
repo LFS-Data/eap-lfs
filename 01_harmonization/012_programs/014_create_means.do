@@ -10,7 +10,7 @@
 	local disaggregations "all male occup occup_skill educat4 agegrp2 empstat formal emprt higher_educ industrycat10 industrycat4 industrycat5 agegrp ocusec marital " // 
 	local factortabs "emprt formal occup occup_skill lstatus educat4 industrycat10 industrycat4 industrycat5 empstat" //  
 	local meantabs "annual_wage1 hourly_wage*"
-	local sumtabs "obs_* weight"
+	local sumtabs "obs_* weight_emp"
 	local countries "MYS PHL IDN MNG VNM THA"  //  
 	local measure "mean median" // 
 	*----------------------------------------------------*
@@ -22,6 +22,8 @@
 		* The row number in which output will start
 		use "${clone}/01_harmonization/011_rawdata/`cnt'/final_panel_`cnt'.dta", clear
 		noi di "Reading `cnt'"
+		
+		
 		
 		* Start Row Number (for saving to excel later)
 		local i = 1
@@ -68,14 +70,14 @@
 
 				* Get the mean
 				if "`factortabs'" != "" {			
-				collapse (`m')  val* `meantabs' [pw=weight], by(group)
+				collapse (`m')  val* `meantabs' (sum) `sumtabs' [pw=weight], by(group)
 				* Replace the labels after collapse 
 				foreach v of var val* `meantabs' {
 					label var `v' `"`l`v''"'
 				}
 				}
 				else {
-				collapse (`m') `meantabs' [pw=weight], by(group)	
+				collapse (`m') `meantabs' (sum) `sumtabs' [pw=weight], by(group)	
 				* Replace the labels after collapse 
 				foreach v of var  `meantabs' {
 					label var `v' `"`l`v''"'
