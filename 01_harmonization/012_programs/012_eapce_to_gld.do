@@ -112,9 +112,9 @@
 	* https://isco-ilo.netlify.app/en/isco-08/
 	gen occup_skill = occup_isco
 	destring occup_skill, replace
-	replace occup_skill = 1 if occup_skill >= 90
-	replace occup_skill = 2 if occup_skill >= 40 & occup_skill < 90
-	replace occup_skill = 3 if occup_skill >= 10 & occup_skill < 40
+	replace occup_skill = 1 if occup_isco >= 90
+	replace occup_skill = 2 if occup_isco >= 40 & occup_isco < 90
+	replace occup_skill = 3 if occup_isco >= 10 & occup_isco < 40
 	*</_occup_skill_>		
 	
 	*<_isco_version_>
@@ -133,8 +133,8 @@
 	*</_male_>		
 		
 	* Rename variables to GLD conventions
-	rename (earning indus_code id) (wage_no_compen industrycat_isic pid)
-	tostring pid, replace force
+	rename (earning indus_code id) (wage_no_compen industrycat_isic psu)
+	tostring psu, replace force
 	
 	*<_industrycat10_>		
 	* At 1 digit level, MSIC to ISIC Rev 4 are the same:
@@ -254,9 +254,9 @@
 	* but at 1 digit level is negligible
 	*-- Skill --*
 	gen occup_skill = occup_code
-	replace occup_skill = 1 if occup_skill >= 9000
-	replace occup_skill = 2 if occup_skill >= 4000 & occup_skill < 9000
-	replace occup_skill = 3 if occup_skill >= 100 & occup_skill < 4000
+	replace occup_skill = 1 if occup_isco >= 9000
+	replace occup_skill = 2 if occup_isco >= 4000 & occup_isco < 9000
+	replace occup_skill = 3 if occup_isco >= 100 & occup_isco < 4000
 	label values occup_skill lbl_occup_skill
 	label var occup_skill "Skill based on ISCO08 standard"
 	*</_occup_skill_>		
@@ -312,14 +312,12 @@
 		replace industrycat10 = `i' if industrycat_isic < `j'000 & industrycat_isic >= `i'000
 
 	}
-	label values industrycat10 lblindustrycat10
 	*</_industrycat10_>		
 	
 	*<_industrycat4_>		
 	* Industry (4)
 	gen byte industrycat4 = industrycat10
 	recode industrycat4 (1=1)(2 3 4 5 =2)(6 7 8 9=3)(10=4)
-	label values industrycat4 lblindustrycat4
 	*</_industrycat4_>		
 	
 	*<_whours_>
@@ -344,4 +342,7 @@
 	keep `idvars' `harmonized'
 	order `idvars' `harmonized'
 		
+	* Label values 
+	lab_vals
+	
 	save "${clone}/01_harmonization/011_rawdata/VNM/gld_panel_VNM.dta", replace
