@@ -23,41 +23,79 @@
 	local idvars "code year harmonization module psu strata weight pid subnatid*"
 	local demovars "male age educat4"
 	local lfsvars "whours empstat industry* isic* isco* wage* *wage occup_* isco08* lstatus"
+	
+	*----------------------*
+	* ID Vars 
+	*----------------------*
+	*<_code_>*
 	gen code = "IDN"
+	*</_code_>*
+
+	*<_harmonization_>*
 	gen harmonization = "EAP-LFS"
+	*</_harmonization_>*
+	
+	*<_module_>*
 	gen module = "LFS"
-  	label var code "Country code"
-	label var year "Year of survey"
-	
+	*</_module_>*
+
+	*<_subnatid1_>*	
 	rename (kode_prov kode_kab rowindex) (subnatid1 subnatid2 pid)
+	*</_subnatid1_>*	
 	
-	gen isco_version = "isco_2008"
+	
+	*----------------------*
+	* Demographic vars
+	*----------------------*
+	*<_male_>*
 	* Male / Female
 	gen male = 1 if k4 == 1 
 	replace male = 0 if k4 == 2
+	*</_male_>*
 
-	* Age 
+	* Age (already harmonized in this dataset)
 //	gen age = k9
 	
+	*<_educat4_>*
 	* Educat4
 	gen educat4 = r6a 
 	recode educat4 (1 =1) (2=2) (3 4 5 =3) (6 7 8 9 10 11 12=4)
+	*</_educat4_>*
 	
+	*----------------------*
+	* LFS Vars
+	*----------------------
+	
+	*<_whours_>*
 	* Working hours 
 	gen whours = r28c
+	*</_whours_>*
 	
+	*<_empstat_>*
 	* Employment status
 	gen empstat = r13a
 	recode empstat (4 = 1) (5 7 =2) (3=3) (1 2 =4) (6 =5)
+	*</_empstat_>*
 	
+	*<_wage_no_compen_>*
 	* Wages 
 	gen wage_no_compen = mwage 
+	*</_wage_no_compen_>*
 	
+	*<_unitwage_>*
 	* Unit of wage 
 	gen unitwage = 5 // monthly (based on mwage construction)
-	
+	*</_unitwage_>*
+
+	*<_hourly_wage_>*
 	* Hourly wage
 	gen hourly_wage = hrwage
+	*</_hourly_wage_>*
+	
+	*<_isco_version_>*
+	gen isco_version = "isco_2008"
+	*</_isco_version_>*
+
 	
 	* Occupation 
 	foreach var in occup_code occup_isco isco08_4 isco08_2 {
@@ -83,9 +121,9 @@
 	
 	gen isic_version="isic_4"
 	*<_industrycat10_>		
-	rename sector9 industrycat_isic
+	decode sector9, gen(industrycat_isic)
 	* Industry Code (10)
-	gen industrycat10 = industrycat_isic
+	gen industrycat10 = sector9
 	*</_industrycat10_>		
 	
 	*<_industrycat4_>		
@@ -94,12 +132,18 @@
 	recode industrycat4 (1=1)(2 3 4 5 =2)(6 7 8 9=3)(10=4)
 	*</_industrycat4_>		
 	
+	*----------------------*
+	* Cleaning Step
+	*----------------------*
 	
 	keep `idvars' `demovars' `lfsvars'
 	order `idvars' `demovars' `lfsvars'
 	
 	* Label values 
 	lab_vals
+	
+	* Consistency with GLD
+	tostring pid industrycat_isic occup_isco, replace
 	
 	save "${clone}/01_harmonization/011_rawdata/IDN/LFS_IDN.dta", replace
 	
@@ -119,16 +163,40 @@
 	append using "${phl_raw}/LFS-2021/LFS JAN 2021.dta"
 	append using "${phl_raw}/LFS-2021/LFS MAR 2021.dta"
 	replace year = 2021 if year != 2020
-
+	
 	local idvars "code year harmonization module psu weight hhsize hhid pid"
 	local demovars "male age educat4"
 	local lfsvars "whours empstat industry* isic* isco* wage* *wage occup_* isco08* lstatus"
+	
+	*----------------------*
+	* ID vars
+	*----------------------
 	gen code = "PHL"
 	gen harmonization = "EAP-LFS"
 	gen module = "LFS"
 	gen weight = pufpwgtprv
+	
+	gen hhid = pufhhnum 
+	rename pufc01_lno pid
+	gen subnatid1 = pufreg
+	gen wave = pufsvymo  
+	rename pufpsu psu
+	
+	*----------------------*
+	* Demographic vars
+	*----------------------
+	
+	rename pufhhsize hhsize 
+	rename pufc05_age age
+	* Male 
+	gen male = pufc04_sex
+	recode male (2=0) (1=1)
+	
+	*----------------------*
+	* LFS Vars
+	*----------------------
 	gen isic_version = "isic_4"
-	gen industrycat_isic = pufc16_pkb
+	decode industrycat_isic = pufc16_pkb
 	*<_industrycat10_>		
 	* Industry Code (10)
 	gen industrycat10 = .
@@ -146,15 +214,7 @@
 	recode industrycat4 (1=1)(2 3 4 5 =2)(6 7 8 9=3)(10=4)
 	*</_industrycat4_>			
 	
-	gen hhid = pufhhnum 
-	rename pufc01_lno pid
-	gen subnatid1 = pufreg
-	gen wave = pufsvymo  
-	rename pufpsu psu
-	rename pufhhsize hhsize 
-	rename pufc05_age age
-  	label var code "Country code"
-	label var year "Year of survey"
+
 	
 	gen isco_version = "isco_2008"
 	gen occup_code = pufc14_procc
@@ -171,9 +231,7 @@
 	replace occup_skill = 2 if temp >= 40 & temp < 90
 	replace occup_skill = 3 if temp >= 10 & temp < 40
 	drop temp
-	* Male 
-	gen male = pufc04_sex
-	recode male (2=0) (1=1)
+
 	
 	* Lstatus 
 	gen lstatus = 1 if pufc11_work ==1 
@@ -203,6 +261,9 @@
 	
 	* Label values 
 	lab_vals
+	
+	* Consistency with GLD
+	tostring hhid pid industrycat_isic occup_isco, replace
 	
 	save "${clone}/01_harmonization/011_rawdata/PHL/LFS_PHL.dta", replace
 	

@@ -26,16 +26,17 @@
 	
 	clear
 	* Save an empty file to append the surveys to
-	save "${clone}/01_harmonization/011_rawdata/gld_panel_IDN.dta", replace emptyok
+	//save "${clone}/01_harmonization/011_rawdata/gld_panel_IDN.dta", replace emptyok
 	save "${clone}/01_harmonization/011_rawdata/MNG/gld_panel_MNG.dta", replace emptyok
-	save "${clone}/01_harmonization/011_rawdata/PHL/gld_panel_PHL.dta", replace emptyok
-	save "${clone}/01_harmonization/011_rawdata/THA/gld_panel_THA.dta", replace emptyok
+	//save "${clone}/01_harmonization/011_rawdata/PHL/gld_panel_PHL.dta", replace emptyok
+	//save "${clone}/01_harmonization/011_rawdata/THA/gld_panel_THA.dta", replace emptyok
 	}
 	
 	* Catalog_GMD
 	* -- Step 1. Read the Catalog of all interested Data -- *
 	import excel "${clone}/00_documentation/EAP_Data_catalog.xlsx", clear firstrow sheet("Catalog_GLD") cellrange(A2:I247)
 
+	keep if country == "MNG"
 	keep if datalibweb == 1 & Public == "Yes" 
 
 	* -- Step 2. Run each of the surveys in the catalog -- *

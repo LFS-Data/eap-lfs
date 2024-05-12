@@ -112,9 +112,10 @@
 	* https://isco-ilo.netlify.app/en/isco-08/
 	gen occup_skill = occup_isco
 	destring occup_skill, replace
-	replace occup_skill = 1 if occup_isco >= 90
-	replace occup_skill = 2 if occup_isco >= 40 & occup_isco < 90
-	replace occup_skill = 3 if occup_isco >= 10 & occup_isco < 40
+	destring occup_isco, gen(temp)
+	replace occup_skill = 1 if temp >= 90
+	replace occup_skill = 2 if temp >= 40 & temp < 90
+	replace occup_skill = 3 if temp >= 10 & temp < 40
 	*</_occup_skill_>		
 	
 	*<_isco_version_>
@@ -254,9 +255,10 @@
 	* but at 1 digit level is negligible
 	*-- Skill --*
 	gen occup_skill = occup_code
-	replace occup_skill = 1 if occup_isco >= 9000
-	replace occup_skill = 2 if occup_isco >= 4000 & occup_isco < 9000
-	replace occup_skill = 3 if occup_isco >= 100 & occup_isco < 4000
+	destring occup_isco, gen(temp)
+	replace occup_skill = 1 if temp >= 9000
+	replace occup_skill = 2 if temp >= 4000 & temp < 9000
+	replace occup_skill = 3 if temp >= 100 & temp < 4000
 	label values occup_skill lbl_occup_skill
 	label var occup_skill "Skill based on ISCO08 standard"
 	*</_occup_skill_>		

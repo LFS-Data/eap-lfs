@@ -5,7 +5,7 @@
 *- 
 *------------------------------------------------------------------*
 
-	local countries "PHL IDN MNG VNM THA MYS" // PHL IDN MNG VNM THA 
+	local countries "MNG VNM THA MYS" // PHL IDN MNG VNM THA 
 	cd "${clone}\01_harmonization\011_rawdata\OTHER"
 	local files: dir . files "*dta"
 		*----------------------------------------------------*
@@ -14,10 +14,12 @@
 		qui foreach cnt in `countries' `files' {
 		* The row number in which output will start
 		if ("`cnt'" == "THA" | "`cnt'" == "MYS" | "`cnt'" == "PHL"| "`cnt'" ==  "VNM" | "`cnt'" == "IDN" | "`cnt'" == "MNG") {
+			//local cnt "IDN"
 			local inputdir "${clone}/01_harmonization/011_rawdata/`cnt'"
 			local inputfile "gld_panel_`cnt'.dta"
 			local outputdir "`inputdir'"
-
+			use "`inputdir'/`inputfile'", clear
+			
 
 			}
 			else {
@@ -26,24 +28,45 @@
 				local outputdir "`inputdir'/harmonized"
 			}
 		use "`inputdir'/`inputfile'", clear
-		
-		if "`cnt'" == "PHL" | "`cnt'" == "IDN" {
-			append using "`inputdir'/LFS_`cnt'.dta"
-		}
+	
+		* Small cleaning
+		destring year age, replace
 		cap drop migrated_*
 		
-		* Suspect about harmonized data in IDN 1997 and 2012, remove for now 
-		if "`cnt'" == "IDN" {
-			destring year, replace
-			drop if year == 1997 | year == 2012
+		* Remove subnat labeling 
+		gen province = subnatid1 
+		gen district = subnatid2 
+		drop subnatid* 
+		rename (province district) (subnatid1 subnatid2)
+		
+		foreach i in 1 2 {
+			tostring subnatid`i', replace
+			split subnatid`i', parse(" - ") 
+			replace subnatid`i'1 = subinstr(subnatid`i'1, " ", "", .)
+			replace subnatid`i'1 = subinstr(subnatid`i'1, "-", "", .)
+
 		}
 		
+		drop subnatid*2 subnatid1 subnatid2 
+		destring subnatid11 subnatid21, replace
+		
+		rename (subnatid11 subnatid21) (subnatid1 subnatid2)
+		noi di "Reading `cnt'"
+		
+		
+
+		if ("`cnt'" == "PHL" | "`cnt'" == "IDN") {
+		
+			append using "`inputdir'/LFS_`cnt'.dta"
+		}
+
+		* Suspect about harmonized data in IDN 1997 and 2012, remove for now 
+
 		*Subset thailand, datset too big
 		if "`cnt'" == "THA" {
 		//keep if inlist(year, 1985, 1990, 1995, 2000, 2005, 2010, 2015,2020,2021,2022)
 		}
 		
-		noi di "Reading `cnt'"
 	
 		* Harmonize across ISCO versions 
 		*<_isco08_4_>*
@@ -59,7 +82,7 @@
 		*</_isco08_4_>*
 
 		*<_isco08_2_>*		
-		cap gen isco08_2 = substr(isco084,1,2)
+		cap gen isco08_2 = substr(isco08_4,1,2)
 		lab var isco08_2 "ISCO-08 at 2-digit "
 		*</_isco08_2_>*
 		
@@ -85,9 +108,7 @@
 		gen weight_emp = weight if module != "SWS"
 		*</_weight_emp_>	
 
-	
-		* Small cleaning
-		destring year age, replace
+
 		
 		* Employment rate variable (Some EAPCE adjustments)
 		if ("`cnt'" == "MYS" | "`cnt'" == "VNM") { 
@@ -200,7 +221,8 @@
 		
 		replace hourly_wage2 = 0 if hourly_wage2 == .
 		
-		gen hourly_wage =(hourly_wage1 + hourly_wage2)
+		* don't gen if already exists (eg., idn)
+		cap gen hourly_wage =(hourly_wage1 + hourly_wage2)
 		*</_hourly_wage_>	
 
 		*<_obs_annual_>	
