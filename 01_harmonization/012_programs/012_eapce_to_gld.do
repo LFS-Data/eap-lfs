@@ -256,29 +256,35 @@
 	*-- Skill --*
 	gen occup_skill = occup_code
 	destring occup_isco, gen(temp)
+	replace occup_skill = . if temp < 0
 	replace occup_skill = 1 if temp >= 9000
 	replace occup_skill = 2 if temp >= 4000 & temp < 9000
 	replace occup_skill = 3 if temp >= 100 & temp < 4000
 	label values occup_skill lbl_occup_skill
 	label var occup_skill "Skill based on ISCO08 standard"
 	*</_occup_skill_>		
-	
+	/*
 	*<_lstatus_>		
 	* Labor force status 
 	gen lstatus = 1 if active == 1
 	replace lstatus = 3 if active != 1
 	replace lstatus = 2 if active == 1 & (self_employment==1 | employed==1)
 	*</_lstatus_>		
-	
+*/	
 	*<_empstat_>		
 	* Empstat
 	gen empstat =.
 	replace empstat = 4 if self_employment == 1
 	replace empstat = 2 if (earning == 0 | earning == .) & (employed==1 | self_employment==1)
 	replace empstat = 1 if (earning > 0) & (employed==1)
-	replace empstat = 5 if empstat == .
+	replace empstat = 5 if empstat == . & employed == 1
 	lab values empstat lbl_empstat
 	*</_empstat_>		
+	
+
+	gen lstatus = 1 if empstat != . 
+	replace lstatus = 2 if empstat == . 
+	replace lstatus = 3 if active != 1 & employed != 1
 	
 	*<_male_>		
 	* Create variable labels for the male variable
@@ -288,7 +294,6 @@
 	*<_unitwage_>		
 	* Create Unit wage
 	gen unitwage = 5 // Unit wage is monthly 
-	label values unitwage lbl_unitwage
 	*</_unitwage_>		
 	
 	*<_wage_no_compen_>		
@@ -306,6 +311,7 @@
 	gen isic_version="isic_4"
 	*<_industrycat10_>		
 	rename indus_code industrycat_isic
+	tostring indus_code2, gen(industrycat_isic_2)
 	* Industry Code (10)
 	gen industrycat10 = .
 	replace industrycat10 = 1 if industrycat_isic < 2000
@@ -338,7 +344,7 @@
 	rename id pid
 	
 	local idvars "code harmonization module subnatid1 pid male year age"
-	local harmonized "educat* empstat isco_version occup_* isco08_2 isco08_4 isic_version industrycat* whours unitwage wage_no_compen weight"
+	local harmonized "educat* empstat isco_version occup_* isco08_2 isco08_4 isic_version industrycat* whours unitwage wage_no_compen weight lstatus"
 	
 	
 	keep `idvars' `harmonized'

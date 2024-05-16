@@ -196,10 +196,10 @@
 	* LFS Vars
 	*----------------------
 	gen isic_version = "isic_4"
-	decode industrycat_isic = pufc16_pkb
+	gen industrycat_isic = pufc16_pkb
 	*<_industrycat10_>		
 	* Industry Code (10)
-	gen industrycat10 = .
+	gen industrycat10 = industrycat_isic
 	replace industrycat10 = 1 if industrycat_isic < 20
 	forval i=1/10 {
 		local j = `i'+1

@@ -5,20 +5,22 @@
 *- 
 *------------------------------------------------------------------*
 
-	local countries "MNG VNM THA MYS" // PHL IDN MNG VNM THA 
-	cd "${clone}\01_harmonization\011_rawdata\OTHER"
-	local files: dir . files "*dta"
+	local countries "VNM" // PHL IDN MNG VNM THA MYS
+	//cd "${clone}\01_harmonization\011_rawdata\OTHER"
+	//local files: dir . files "*dta"
 		*----------------------------------------------------*
 		*---   Extra Harmonizations / Variable Creations  ---*
 		*----------------------------------------------------*		
 		qui foreach cnt in `countries' `files' {
 		* The row number in which output will start
 		if ("`cnt'" == "THA" | "`cnt'" == "MYS" | "`cnt'" == "PHL"| "`cnt'" ==  "VNM" | "`cnt'" == "IDN" | "`cnt'" == "MNG") {
-			//local cnt "IDN"
+			//local cnt "PHL"
 			local inputdir "${clone}/01_harmonization/011_rawdata/`cnt'"
 			local inputfile "gld_panel_`cnt'.dta"
 			local outputdir "`inputdir'"
-			use "`inputdir'/`inputfile'", clear
+			//append using "`inputdir'/LFS_`cnt'.dta"
+
+		//use "`inputdir'/`inputfile'", clear
 			
 
 			}
@@ -32,6 +34,16 @@
 		* Small cleaning
 		destring year age, replace
 		cap drop migrated_*
+		
+		cap tab subnatid1 
+		if _rc != 0 {
+			gen subnatid1 = .
+		}
+		
+		cap tab subnatid2
+		if _rc != 0 {
+			gen subnatid2 = .
+		}
 		
 		* Remove subnat labeling 
 		gen province = subnatid1 
@@ -64,6 +76,7 @@
 
 		*Subset thailand, datset too big
 		if "`cnt'" == "THA" {
+			cap gen module = "GLD"
 		//keep if inlist(year, 1985, 1990, 1995, 2000, 2005, 2010, 2015,2020,2021,2022)
 		}
 		
@@ -86,16 +99,25 @@
 		lab var isco08_2 "ISCO-08 at 2-digit "
 		*</_isco08_2_>*
 		
+		*<_isicgen_>*
+		isicgen
+		*</_isicgen_>*
+		
+		
 		*<_industrycat_isic2_>*		
+		tostring industrycat_isic, replace
 		gen industrycat_isic2 = substr(industrycat_isic,1,2)
 		lab var industrycat_isic2 "ISIC at 2 digit"
 		*</_industrycat_isic2_>*
-
-		*<_industrycat_isic2_2_>*		
+/*
+		*<_industrycat_isic2_2_>*
+		qui cap sum industrycat_isic_2 
+		if _rc == 0 {
 		gen industrycat_isic2_2 = substr(industrycat_isic_2,1,2)
 		lab var industrycat_isic2_2 "Second ISIC at 2 digit"
+		}
 		*</_industrycat_isic2_2_>*
-		
+*/		
 		* Create a national level variable (no disaggregations)
 		gen all2 = "National"
 		lab var all2 "National"
@@ -251,6 +273,30 @@
 
 		missings dropvars, force
 		
+		tostring pid wave, replace
+		destring occup_code, replace
+		
+		drop n3_2 n31_2 n3 
 		save "`outputdir'/final_panel_`cnt'", replace
 	* Next country
+	}
+	
+	* Append a cross-country dataset
+	use "${clone}/01_harmonization/011_rawdata/THA/final_panel_THA", clear
+	gen is_lfs = 1 
+	keep code isco_version isic_version year weight age male educat3 educat4 lstatus empstat ocusec industry_orig industrycat_isic industrycat10 industrycat4 industrycat5  occup_orig occup_isco occup_skill occup wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ agegrp agegrp2 annual_wage1 hourly_wage1 
+	
+	save "${clone}/01_harmonization/011_rawdata/final_panel_full", replace
+	
+
+	foreach c in VNM MYS MNG IDN PHL {
+		noi di "`c'"
+		use "${clone}/01_harmonization/011_rawdata/`c'/final_panel_`c'", clear
+		gen is_lfs = 1 if module != "SWS"
+		cap drop survey
+		keep code isco_version isic_version year weight age male educat3 educat4 lstatus empstat ocusec industry_orig industrycat_isic industrycat10 industrycat4 industrycat5  occup_orig occup_isco occup_skill occup wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ agegrp agegrp2 annual_wage1 hourly_wage1 
+
+		append using "${clone}/01_harmonization/011_rawdata/final_panel.dta"
+		save "${clone}/01_harmonization/011_rawdata/final_panel.dta", replace
+
 	}

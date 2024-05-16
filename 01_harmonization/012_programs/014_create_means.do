@@ -11,8 +11,9 @@
 	local factortabs "emprt formal occup occup_skill lstatus educat4 industrycat10 industrycat4 industrycat5 empstat" //  
 	local meantabs "annual_wage1 hourly_wage*"
 	local sumtabs "obs_* weight_emp"
+	//local mediantabs "annual_wage1 hourly_wage"
 	local countries "MYS PHL IDN MNG VNM THA"  //  
-	local measure "mean median" // 
+	local measure "mean" // 
 	*----------------------------------------------------*
 	** Pt 1. Different Disaggregations and tabulations  **
 	*----------------------------------------------------*
@@ -20,6 +21,7 @@
 		noi di "`m'"
 	qui foreach cnt in `countries' {
 		* The row number in which output will start
+		//local cnt "MYS"
 		use "${clone}/01_harmonization/011_rawdata/`cnt'/final_panel_`cnt'.dta", clear
 		noi di "Reading `cnt'"
 		
@@ -43,14 +45,16 @@
 						* Reshape factors to wide
 						noi di "`result'"
 						tab `result', gen(val`result')
-						* Calculate median
-						tab `result', gen(val`result'_p50)
 					}
 					else noi di "variable `result' not available, skipping"
 				}
 			}
 			
 			* Get a grouped aggregate by year and by subgroup
+			//local agg "all"
+			//local m "median"
+			//local meantabs "annual_wage1 hourly_wage*"
+			//local sumtabs "obs_* weight_emp"			
 			cap decode `agg', gen(grp)
 				
 			if _rc == 0 {
@@ -70,16 +74,16 @@
 
 				* Get the mean
 				if "`factortabs'" != "" {			
-				collapse (`m')  val* `meantabs' (sum) `sumtabs' [pw=weight], by(group)
+				collapse (`m')  val* (median) `meantabs' (rawsum) `sumtabs' [pw=weight], by(group)
 				* Replace the labels after collapse 
-				foreach v of var val* `meantabs' {
+				foreach v of var val* `meantabs' `sumtabs'  {
 					label var `v' `"`l`v''"'
 				}
 				}
 				else {
-				collapse (`m') `meantabs' (sum) `sumtabs' [pw=weight], by(group)	
+				collapse (median) `meantabs' (rawsum) `sumtabs' [pw=weight], by(group)	
 				* Replace the labels after collapse 
-				foreach v of var  `meantabs' {
+				foreach v of var  `meantabs' `sumtabs' {
 					label var `v' `"`l`v''"'
 				}
 				}
@@ -99,7 +103,7 @@
 				* Cleaning
 				sort group
 				gen valdummy = .
-				keep val* `meantabs' group1 group2
+				keep val* `meantabs' `sumtabs' group1 group2
 				drop valdummy 
 				
 				destring group1, replace
@@ -129,7 +133,7 @@
 				* Next subgroup				
 				restore
 				if "`agg'"=="all" {
-				local i= `i'+`num+1'
+				local i= `i'+`num'+1
 				}
 				else {
 				local i= `i'+`num'

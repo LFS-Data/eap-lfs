@@ -188,6 +188,7 @@
 		cap destring psu, replace
 		cap destring relationcs, replace	
 		cap drop migrated_from_code
+		destring age, replace
 		
 		gen module = "LFS"
 
