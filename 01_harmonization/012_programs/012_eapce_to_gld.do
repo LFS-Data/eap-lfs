@@ -8,6 +8,7 @@
 	* Malaysia												 *
 	*--------------------------------------------------------*
 	* LFS Survey (All workers)
+	
 	use "${msteams}/Combined/Harmonized/MYS/combined_uncleaned.dta", clear
 	rename *, lower
 	rename province subnatid1
@@ -183,7 +184,7 @@
 	
 	
 	local idvars "code harmonization module subnatid1 pid ssu male year age hhid"
-	local harmonized "educat* empstat isco_version occup_* isco08_2 isco08_4 isic_version industrycat* whours unitwage wage_no_compen weight"
+	local harmonized "educat* empstat isco_version occup_* isco08_2 isco08_4 isic_version industrycat* whours unitwage wage_no_compen weight lstatus"
 	
 	keep `idvars' `harmonized'
 	order `idvars' `harmonized'

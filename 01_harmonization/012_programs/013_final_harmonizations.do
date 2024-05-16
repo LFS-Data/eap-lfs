@@ -5,7 +5,7 @@
 *- 
 *------------------------------------------------------------------*
 
-	local countries "VNM" // PHL IDN MNG VNM THA MYS
+	local countries "MYS" // PHL IDN MNG VNM THA MYS
 	//cd "${clone}\01_harmonization\011_rawdata\OTHER"
 	//local files: dir . files "*dta"
 		*----------------------------------------------------*
@@ -273,7 +273,7 @@
 
 		missings dropvars, force
 		
-		tostring pid wave, replace
+		cap tostring pid wave, replace
 		destring occup_code, replace
 		
 		drop n3_2 n31_2 n3 
@@ -284,7 +284,7 @@
 	* Append a cross-country dataset
 	use "${clone}/01_harmonization/011_rawdata/THA/final_panel_THA", clear
 	gen is_lfs = 1 
-	keep code isco_version isic_version year weight age male educat3 educat4 lstatus empstat ocusec industry_orig industrycat_isic industrycat10 industrycat4 industrycat5  occup_orig occup_isco occup_skill occup wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ agegrp agegrp2 annual_wage1 hourly_wage1 
+	keep code isco_version isic_version year weight age male educat3 educat4 lstatus empstat industrycat_isic industrycat10 industrycat4 industrycat5 occup_isco occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ agegrp agegrp2 annual_wage1 hourly_wage1 
 	
 	save "${clone}/01_harmonization/011_rawdata/final_panel_full", replace
 	
@@ -294,9 +294,9 @@
 		use "${clone}/01_harmonization/011_rawdata/`c'/final_panel_`c'", clear
 		gen is_lfs = 1 if module != "SWS"
 		cap drop survey
-		keep code isco_version isic_version year weight age male educat3 educat4 lstatus empstat ocusec industry_orig industrycat_isic industrycat10 industrycat4 industrycat5  occup_orig occup_isco occup_skill occup wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ agegrp agegrp2 annual_wage1 hourly_wage1 
+		keep code isco_version isic_version year weight age male educat3 educat4 lstatus empstat industrycat_isic industrycat10 industrycat4 industrycat5  occup_isco occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ agegrp agegrp2 annual_wage1 hourly_wage1 
 
-		append using "${clone}/01_harmonization/011_rawdata/final_panel.dta"
-		save "${clone}/01_harmonization/011_rawdata/final_panel.dta", replace
+		append using "${clone}/01_harmonization/011_rawdata/final_panel_full.dta"
+		save "${clone}/01_harmonization/011_rawdata/final_panel_full.dta", replace
 
 	}
