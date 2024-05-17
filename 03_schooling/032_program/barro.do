@@ -129,6 +129,11 @@
 		gen back_lays`r' = .
 	}	
 	
+	foreach r in 50 95 5 {
+		gen back_score`r'_agg = reading_ipolate
+		gen back_lays`r'_agg = .
+	}
+	
 	levelsof countrycode, local(cnt)
 	levelsof agefrom, local(age)
 	
@@ -176,6 +181,20 @@
 				replace back_lays`r' = yr_sch_ipolate*(back_score`r'/625) if year == `min_yr' & countrycode=="`c'" & agefrom == `a' 
 			}
 			
+			* Calculate one version that includes all the countries
+			quietly: summarize growth_rate if growth_rate >0  & agefrom == 15, d 
+			 foreach p in 50 5 95 {
+
+				local full`p' = r(p`p')
+				cap gen full_p`p' = `full`p''
+				quietly: summarize back_score`p'_agg if countrycode=="`c'" & agefrom == `a' & year == `min_yr_inter' 
+				local score = r(mean)
+				noi di "`score'"
+			
+				replace back_score`p'_agg = `score'*(1-full_p`p') if year == `min_yr' & countrycode=="`c'" & agefrom == `a' 
+				replace back_lays`p'_agg = yr_sch_ipolate*(back_score`p'_agg/625) if year == `min_yr' & countrycode=="`c'" & agefrom == `a' 
+			}
+			
 			local j = `j'+1
 			local i = `i'+1
 		}
@@ -187,10 +206,15 @@
 		replace back_lays`r' = yr_sch_ipolate*(reading_ipolate/625) if back_lays`r' == .
 	}
 
+	foreach r in 50 95 5 {
+		replace back_lays`r'_agg = yr_sch_ipolate*(reading_ipolate/625) if back_lays`r'_agg == .
+	}
+
+
 	
 	* 2000 PISA = 1985 (15 to 24 year old)
 	* 2003 PISA = 1988 (1985 or 1990)
-	* 2006 PISA = 1991 (1990)
+	* 2006 PISA = 1991 (1990owth_raw)
 	* 2009 PISA = 1994 (1995)
 	* 2012 PISA = 1997 (1995 or 2000)
 	* 2015 PISA = 2000 (2000)
