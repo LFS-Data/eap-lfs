@@ -311,3 +311,13 @@
 	drop if year <= 2000
 	
 	order code year pid subnatid1 weight weight_emp age male educat3 educat4 higher_educ lstatus empstat wage_no_compen_1 unitwage_1 whours_1 annual_wage1 hourly_wage1 isco08_2 isco08_4 occup_skill isic4_4 isic4_2 weight_emp industrycat5 industrycat10 
+	
+	save "${clone}/01_harmonization/011_rawdata/final_panel_2000-2023.dta", replace
+
+	restore 
+	
+	keep if year < 2000
+	
+	order code year pid subnatid1 weight weight_emp age male educat3 educat4 higher_educ lstatus empstat wage_no_compen_1 unitwage_1 whours_1 annual_wage1 hourly_wage1 isco08_2 isco08_4 occup_skill isic4_4 isic4_2 weight_emp industrycat5 industrycat10 
+
+	save "${clone}/01_harmonization/011_rawdata/final_panel_pre2000.dta", replace
