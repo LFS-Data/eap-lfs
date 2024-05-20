@@ -121,9 +121,10 @@
 	
 	gen isic_version="isic_4"
 	*<_industrycat10_>		
-	decode sector9, gen(industrycat_isic)
+	label drop sector9
+	ren sector9 industrycat_isic
 	* Industry Code (10)
-	gen industrycat10 = sector9
+	gen industrycat10 = industrycat_isic
 	*</_industrycat10_>		
 	
 	*<_industrycat4_>		
@@ -146,7 +147,7 @@
 	tostring pid industrycat_isic occup_isco, replace
 	
 	save "${clone}/01_harmonization/011_rawdata/IDN/LFS_IDN.dta", replace
-	
+	e
 	*--------------------------------------------------------*
 	* Philippines
 	* See corresponding questionnaires:

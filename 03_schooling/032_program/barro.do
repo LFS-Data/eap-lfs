@@ -26,7 +26,7 @@
 	* Merge the barro lee dataset 
 	use "${clone}/03_schooling/031_rawdata/BL_v3_MF.dta", clear
 
-	keep year WBcode pop agefrom ageto yr_sch yr_sch_sec
+	keep year WBcode pop agefrom ageto yr_sch yr_sch_sec 
 
 	rename WBcode countrycode
 	
@@ -74,7 +74,7 @@
 	merge m:m countrycode using `pisa_scores', keep(matched) nogen
 
 	* Some initial cleaning and filtering
-	drop countryname pop 
+	drop countryname 
 	order year countrycode agefrom ageto yr_* reading*score* math*score* scie*score*
 	keep if year >= 1960
 
@@ -115,6 +115,12 @@
 	
 	bysort code agefrom (year): g growth_rate=(reading_ipolate[_n]-reading_ipolate[_n-1])/reading_ipolate[_n-1] if _n!=1 & reading_ipolate!=. 
 
+	* Calculate one version that includes all the countries
+	quietly: summarize growth_rate if growth_rate >0  & agefrom == 15, d 
+	foreach p in 50 5 95 {
+		local full`p' = r(p`p')
+		gen full_p`p' = `full`p''
+	}
  
  }
 
@@ -182,11 +188,7 @@
 			}
 			
 			* Calculate one version that includes all the countries
-			quietly: summarize growth_rate if growth_rate >0  & agefrom == 15, d 
 			 foreach p in 50 5 95 {
-
-				local full`p' = r(p`p')
-				cap gen full_p`p' = `full`p''
 				quietly: summarize back_score`p'_agg if countrycode=="`c'" & agefrom == `a' & year == `min_yr_inter' 
 				local score = r(mean)
 				noi di "`score'"
@@ -201,7 +203,7 @@
 
 }
 }
-
+	* Calculate remaining LAYS 
 	foreach r in gr95 gr50 grmean grmin grmax {
 		replace back_lays`r' = yr_sch_ipolate*(reading_ipolate/625) if back_lays`r' == .
 	}
@@ -209,8 +211,17 @@
 	foreach r in 50 95 5 {
 		replace back_lays`r'_agg = yr_sch_ipolate*(reading_ipolate/625) if back_lays`r'_agg == .
 	}
-
-
+	
+	wbopendata, match(countrycode)
+	drop regionname adminregion adminregionname incomelevelname lendingtype lendingtypename countryname code
+	
+	* Updating scenarios - we don't need min max and mean, but we'll keep the country level just to see the difference
+	drop grmax back_laysgrmin back_scoregrmax back_laysgrmax back_scoregrmin grmin back_laysgrmean back_scoregrmean grmean
+	
+	order countrycode region incomelevel year agefrom ageto yr_sch yr_sch_sec reading_score math_score science_score yr_sch_ipolate reading_ipolate growth_rate gr95 back_scoregr95 back_laysgr95 gr50 back_scoregr50 back_laysgr50 full_p5 back_score5_agg back_lays5_agg full_p50 back_score50_agg back_lays50_agg full_p95 back_score95_agg back_lays95_agg pop
+	
+	save "${clone}/03_schooling/lays_simulation.dta", replace
+	
 	
 	* 2000 PISA = 1985 (15 to 24 year old)
 	* 2003 PISA = 1988 (1985 or 1990)

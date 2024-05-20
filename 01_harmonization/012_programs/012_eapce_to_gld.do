@@ -345,7 +345,7 @@
 	rename id pid
 	
 	local idvars "code harmonization module subnatid1 pid male year age"
-	local harmonized "educat* empstat isco_version occup_* isco08_2 isco08_4 isic_version industrycat* whours unitwage wage_no_compen weight lstatus"
+	local harmonized "educat* empstat isco_version occup_code occup_isco occup_skill isco08_2 isco08_4 isic_version industrycat* whours unitwage wage_no_compen weight lstatus"
 	
 	
 	keep `idvars' `harmonized'

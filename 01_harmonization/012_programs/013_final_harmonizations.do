@@ -274,7 +274,10 @@
 		missings dropvars, force
 		
 		cap tostring pid wave, replace
+		destring isco08_4 isco08_2 isic4_2 isic4_4, replace
 		destring occup_code, replace
+		replace isic4_4 = "" if isic4_4 == "." | isic4_4 == ".a"
+		replace isic4_2 = "" if isic4_2 == "." | isic4_2 == ".a"
 		
 		cap drop n3_2 n31_2 n3 
 		save "`outputdir'/final_panel_`cnt'", replace
@@ -285,7 +288,7 @@
 	use "${clone}/01_harmonization/011_rawdata/THA/final_panel_THA", clear
 	gen is_lfs = 1 
 	tostring pid, replace
-	keep code pid isco_version isic_version year weight age male educat3 educat4 lstatus empstat industrycat_isic industrycat10 industrycat4 industrycat5 occup_isco occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ agegrp agegrp2 annual_wage1 hourly_wage1 
+	keep code pid year weight age male educat3 educat4 lstatus empstat industrycat10 industrycat5 occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ annual_wage1 hourly_wage1 
 	
 	save "${clone}/01_harmonization/011_rawdata/final_panel_full", replace
 	
@@ -296,9 +299,15 @@
 		gen is_lfs = 1 if module != "SWS"
 		cap drop survey
 		tostring pid, replace
-		keep code pid isco_version isic_version year weight age male educat3 educat4 lstatus empstat industrycat_isic industrycat10 industrycat4 industrycat5  occup_isco occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ agegrp agegrp2 annual_wage1 hourly_wage1 
+		keep code pid year weight age male educat3 educat4 lstatus empstat industrycat10 industrycat5 occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ annual_wage1 hourly_wage1 
 
 		append using "${clone}/01_harmonization/011_rawdata/final_panel_full.dta"
 		save "${clone}/01_harmonization/011_rawdata/final_panel_full.dta", replace
 
 	}
+	
+	preserve 
+	
+	drop if year <= 2000
+	
+	order code year pid subnatid1 weight weight_emp age male educat3 educat4 higher_educ lstatus empstat wage_no_compen_1 unitwage_1 whours_1 annual_wage1 hourly_wage1 isco08_2 isco08_4 occup_skill isic4_4 isic4_2 weight_emp industrycat5 industrycat10 

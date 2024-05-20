@@ -2,13 +2,12 @@
 * 01 RUN: Run the tasks that come from this routine
 *  The final output includes harmonized datasets and summary statistics
 *==============================================================================*
-* Make sure all the ados here are defined 
+	* Make sure all the ados here are defined 
 	do "${clone}/01_harmonization/012_programs/019_masco_isco.ado"
 	do "${clone}/01_harmonization/012_programs/0191_label_values.ado"
 	do "${clone}/01_harmonization/012_programs/0190_isicgen.ado"
 
-
-* TASK 01_HARMONIZATION: Harmonizes GLD data and creates descriptive statistics (in datalibweb or input path)
+	* TASK 01_HARMONIZATION: Harmonizes GLD data and creates descriptive statistics (in datalibweb or input path)
 	* Subtask 010:
 	//do "${clone}/01_harmonization/012_programs/010_catalog_dl.do"
 	
