@@ -222,12 +222,52 @@
 	
 	save "${clone}/03_schooling/lays_simulation.dta", replace
 	
+	*----------------------------------------------------------------------------*
+	* Step 3: Get matrix
+	*----------------------------------------------------------------------------*
+	use "${clone}/03_schooling/lays_simulation.dta", replace
 	
-	* 2000 PISA = 1985 (15 to 24 year old)
-	* 2003 PISA = 1988 (1985 or 1990)
-	* 2006 PISA = 1991 (1990owth_raw)
-	* 2009 PISA = 1994 (1995)
-	* 2012 PISA = 1997 (1995 or 2000)
-	* 2015 PISA = 2000 (2000)
-	* 2018 PISA = 2003 (2000 or 2005)
-	* 2022 PISA = 2007 (2000 or 2010)
+	keep countrycode region year agefrom ageto yr_sch_ipolate pop back_lays* back_score*
+	
+	* Interpolate in-between population numbers (we will end up dropping the in between years, but this is to have a full routine)
+	by countrycode agefrom, sort: ipolate pop year, generate(pop_ipolate)	
+	replace pop_ipolate = round(pop_ipolate)
+	
+	* Get a year of birth variable so we can backward calculate by cohort
+	gen yob = year - agefrom
+	order countrycode region year yob agefrom
+	foreach v in score lays {
+		foreach s in gr50 gr95 5_agg 50_agg 95_agg {
+			replace back_`v'`s' = . if agefrom > 15
+		}
+	}
+	bys countrycode yob: fillmissing back_scoregr95 back_laysgr95 back_scoregr50 back_laysgr50 back_score5_agg back_lays5_agg back_score50_agg back_lays50_agg back_score95_agg back_lays95_agg
+
+	sort countrycode year agefrom
+	
+	* Group the ages 
+	gen agegrp = "15t24" if agefrom == 15
+	replace agegrp = "25t44" if inlist(agefrom, 25,35,45)
+	replace agegrp = "55+" if agefrom == 55
+	
+	drop agefrom ageto pop
+	
+
+	egen agg_group = group(countrycode year agegrp), label
+
+	* Mean of the grouped ages
+	collapse (mean) yr_sch_ipolate back_scoregr95 back_laysgr95 back_scoregr50 back_laysgr50 back_score5_agg back_lays5_agg back_score50_agg back_lays50_agg back_score95_agg back_lays95_agg [fw=pop_ipolate], by(agg_group)
+	
+	decode agg_group, gen(group)
+	split group, parse(" ")
+	
+	drop group agg_group
+	rename (group1 group2 group3) (countrycode year agegrp)
+	
+	* Turn into a matrix
+	reshape wide yr_sch_ipolate back_scoregr95 back_laysgr95 back_scoregr50 back_laysgr50 back_score5_agg back_lays5_agg back_score50_agg back_lays50_agg back_score95_agg back_lays95_agg, i(countrycode agegrp) j(year,string)
+	
+	order countrycode agegrp yr_sch_ipolate* back_scoregr95* back_scoregr50* back_score5_* back_score50* back_score95* back_laysgr95* back_laysgr50* back_lays5_* back_lays50* back_score95*
+	
+	keep countrycode agegrp *19*0  *20*0 
+	

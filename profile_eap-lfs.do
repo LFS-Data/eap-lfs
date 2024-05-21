@@ -114,7 +114,7 @@ qui {
   * 3) Download and install required user written ado's
   *-----------------------------------------------------------------------------
   * Fill this list will all user-written commands this project requires
-  local user_commands fs pv seq mdesc alphawgt touch labmv fre egenmore unique missings wbopendata labutil iscogen
+  local user_commands fs pv seq mdesc alphawgt touch labmv fre egenmore unique missings wbopendata labutil iscogen fillmissing
 
   * Loop over all the commands to test if they are already installed, if not, then install
   foreach command of local user_commands {
