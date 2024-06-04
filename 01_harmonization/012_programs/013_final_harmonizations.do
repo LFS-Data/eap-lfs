@@ -5,7 +5,7 @@
 *- 
 *------------------------------------------------------------------*
 
-	local countries "MYS" // PHL IDN MNG VNM THA MYS
+	local countries "PHL IDN MNG VNM THA MYS" // PHL IDN MNG VNM THA MYS
 	//cd "${clone}\01_harmonization\011_rawdata\OTHER"
 	//local files: dir . files "*dta"
 		*----------------------------------------------------*
@@ -14,13 +14,11 @@
 		qui foreach cnt in `countries' `files' {
 		* The row number in which output will start
 		if ("`cnt'" == "THA" | "`cnt'" == "MYS" | "`cnt'" == "PHL"| "`cnt'" ==  "VNM" | "`cnt'" == "IDN" | "`cnt'" == "MNG") {
-			//local cnt "PHL"
 			local inputdir "${clone}/01_harmonization/011_rawdata/`cnt'"
 			local inputfile "gld_panel_`cnt'.dta"
 			local outputdir "`inputdir'"
 			//append using "`inputdir'/LFS_`cnt'.dta"
 
-		//use "`inputdir'/`inputfile'", clear
 			
 
 			}
@@ -51,6 +49,8 @@
 		drop subnatid* 
 		rename (province district) (subnatid1 subnatid2)
 		
+		cap gen occup_code = occup_isco
+		destring occup_code, replace
 		foreach i in 1 2 {
 			tostring subnatid`i', replace
 			split subnatid`i', parse(" - ") 
@@ -68,8 +68,10 @@
 		
 
 		if ("`cnt'" == "PHL" | "`cnt'" == "IDN") {
-		
 			append using "`inputdir'/LFS_`cnt'.dta"
+		}
+		if ("`cnt'"=="IDN") {
+			replace occup_skill = . if occup_skill == 10
 		}
 
 		* Suspect about harmonized data in IDN 1997 and 2012, remove for now 
@@ -99,6 +101,14 @@
 		lab var isco08_2 "ISCO-08 at 2-digit "
 		*</_isco08_2_>*
 		
+		*<_isco08_1_>*		
+		cap gen isco08_1 = substr(isco08_4,1,1)
+		lab var isco08_1 "ISCO-08 at 1-digit "
+		
+		destring isco08*, replace
+		replace isco08_1 = 0 if isco08_4 < 1000
+		*</_isco08_1_>*
+		
 		*<_isicgen_>*
 		isicgen
 		*</_isicgen_>*
@@ -127,7 +137,8 @@
 		cap gen module = "LFS" if module != "SWS"
 		* Get a weight as an outcome variable that can be used to proxy employment
 		*<_weight_emp_>	
-		gen weight_emp = weight if module != "SWS"
+		replace code = code + "_SWS" if module == "SWS"
+		//gen weight_emp = weight if module != "SWS"
 		*</_weight_emp_>	
 
 
@@ -273,13 +284,26 @@
 
 		missings dropvars, force
 		
-		cap tostring pid wave, replace
-		destring isco08_4 isco08_2 isic4_2 isic4_4, replace
+		cap tostring pid wave hhid, replace
 		destring occup_code, replace
-		replace isic4_4 = "" if isic4_4 == "." | isic4_4 == ".a"
-		replace isic4_2 = "" if isic4_2 == "." | isic4_2 == ".a"
-		
 		cap drop n3_2 n31_2 n3 
+		
+		tostring isic4_4, replace
+		destring isic4_4, gen(temp)
+		replace isic4_4 = substr(isic4_4,1,1) if temp < 1000
+		destring isic4_2, gen(temp2)
+		tostring isic4_2, gen(temp2)
+		replace temp2 = substr(temp2,1,1) if isic4_1 == .
+		destring temp2, replace
+		replace isic4_1 = temp2 if isic4_1 == .
+		drop temp temp2
+		tostring isco08_2, gen(temp)
+		replace temp = substr(temp,1,1)
+		destring temp, replace
+		replace isco08_1 = temp if isco08_1 == .
+		drop temp
+		
+		lab_vals
 		save "`outputdir'/final_panel_`cnt'", replace
 	* Next country
 	}
@@ -288,7 +312,7 @@
 	use "${clone}/01_harmonization/011_rawdata/THA/final_panel_THA", clear
 	gen is_lfs = 1 
 	tostring pid, replace
-	keep code pid year weight age male educat3 educat4 lstatus empstat industrycat10 industrycat5 occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ annual_wage1 hourly_wage1 
+	keep code hhid pid year weight age male educat3 educat4 lstatus empstat industrycat10 industrycat5 occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 higher_educ annual_wage1 hourly_wage1 
 	
 	save "${clone}/01_harmonization/011_rawdata/final_panel_full", replace
 	
@@ -296,10 +320,13 @@
 	foreach c in VNM MYS MNG IDN PHL {
 		noi di "`c'"
 		use "${clone}/01_harmonization/011_rawdata/`c'/final_panel_`c'", clear
+		if "`c'" == "VNM" {
+			gen hhid = "" 
+		}
 		gen is_lfs = 1 if module != "SWS"
 		cap drop survey
 		tostring pid, replace
-		keep code pid year weight age male educat3 educat4 lstatus empstat industrycat10 industrycat5 occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_4 isco08_2 isic4_4 isic4_2 weight_emp higher_educ annual_wage1 hourly_wage1 
+		keep code hhid pid year weight age male educat3 educat4 lstatus empstat industrycat10 industrycat5 occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_* isic4_* higher_educ annual_wage1 hourly_wage1 
 
 		append using "${clone}/01_harmonization/011_rawdata/final_panel_full.dta"
 		save "${clone}/01_harmonization/011_rawdata/final_panel_full.dta", replace
@@ -310,7 +337,7 @@
 	
 	drop if year <= 2000
 	
-	order code year pid subnatid1 weight weight_emp age male educat3 educat4 higher_educ lstatus empstat wage_no_compen_1 unitwage_1 whours_1 annual_wage1 hourly_wage1 isco08_2 isco08_4 occup_skill isic4_4 isic4_2 weight_emp industrycat5 industrycat10 
+	order code year pid subnatid1 weight age male educat3 educat4 higher_educ lstatus empstat wage_no_compen_1 unitwage_1 whours_1 annual_wage1 hourly_wage1 isco08_* occup_skill isic4_* industrycat5 industrycat10 
 	
 	save "${clone}/01_harmonization/011_rawdata/final_panel_2000-2023.dta", replace
 
@@ -318,6 +345,6 @@
 	
 	keep if year < 2000
 	
-	order code year pid subnatid1 weight weight_emp age male educat3 educat4 higher_educ lstatus empstat wage_no_compen_1 unitwage_1 whours_1 annual_wage1 hourly_wage1 isco08_2 isco08_4 occup_skill isic4_4 isic4_2 weight_emp industrycat5 industrycat10 
+	order code year hhid pid subnatid1 weight age male educat3 educat4 higher_educ lstatus empstat wage_no_compen_1 unitwage_1 whours_1 annual_wage1 hourly_wage1 isco08_* occup_skill isic4_* industrycat5 industrycat10 
 
 	save "${clone}/01_harmonization/011_rawdata/final_panel_pre2000.dta", replace

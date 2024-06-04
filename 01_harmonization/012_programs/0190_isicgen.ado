@@ -42,7 +42,6 @@ program  define  isicgen, rclass
 	
 	import delimited "${clone}/01_harmonization/011_rawdata/ISIC_REV_2-ISIC_Rev_3_1_correspondence.csv", clear
 	tostring rev31, gen(isic31)
-	replace isic31 = "0" + isic31 if rev31 < 1000
 	drop rev31 
 	rename isic31 rev31
 	gen rev2_2 = substr(rev2,1,2)
@@ -55,7 +54,6 @@ program  define  isicgen, rclass
 
 	import delimited "${clone}/01_harmonization/011_rawdata/ISIC_Rev_3_ISIC_Rev_3_1_correspondence.csv", clear
 	tostring rev31, gen(isic31)
-	replace isic31 = "0" + isic31 if rev31 < 1000
 	drop rev31 
 	rename isic31 rev31
 	gen rev3_2 = substr(rev3,1,2)
@@ -138,13 +136,19 @@ program  define  isicgen, rclass
 	
 //	replace isic4_2 = substr(isic4_2, 1,1)  + "9" if n31_2 >1
 	*</_isicr4_2_>*
-
+	
+	gen isic4_1 = substr(isic4_4,1,1) 
+	
+	destring isic4*, replace
+	replace isic4_1 = 0 if isic4_4 < 1000
 	drop n_* rev*	
 	
 	lab var isic4_4 "ISIC 4 digits (Rev 4)"
 	lab var isic4_2 "ISIC 2 digits (Rev 4)"
+	lab var isic4_1 "ISIC 1digits (Rev 4)"
 	
-
+	cap replace isic4_4 = "" if isic4_4 == "." | isic4_4 == ".a"
+	cap replace isic4_2 = "" if isic4_2 == "." | isic4_2 == ".a"
   }
    
 end

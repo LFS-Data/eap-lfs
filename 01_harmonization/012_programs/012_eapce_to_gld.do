@@ -127,7 +127,7 @@
 	*<_empstat_>		
 	* create an empstat variable (which later gets fed into the formal variable creation when calculating means)
 	* Malaysia only surveys salaried workers
-	gen empstat = 1 if employee == 1
+	gen empstat = . if employee == 1
 	replace empstat = 4 if self_employment==1 
 	*</_empstat_>		
 	

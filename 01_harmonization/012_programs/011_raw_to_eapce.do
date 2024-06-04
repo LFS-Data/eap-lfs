@@ -145,9 +145,11 @@
 	
 	* Consistency with GLD
 	tostring pid industrycat_isic occup_isco, replace
+	tostring industrycat_isic, replace force
+	replace industrycat_isic = "" if industrycat_isic == "."
 	
 	save "${clone}/01_harmonization/011_rawdata/IDN/LFS_IDN.dta", replace
-	e
+	
 	*--------------------------------------------------------*
 	* Philippines
 	* See corresponding questionnaires:

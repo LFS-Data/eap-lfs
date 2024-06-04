@@ -8,11 +8,11 @@
 	** Step 1. Different Disaggregations and tabulations  **
 	*----------------------------------------------------*
 	local disaggregations "all male occup occup_skill educat4 agegrp2 empstat formal emprt higher_educ industrycat10 industrycat4 industrycat5 agegrp ocusec marital " // 
-	local factortabs "emprt formal occup occup_skill lstatus educat4 industrycat10 industrycat4 industrycat5 empstat" //  
+	local factortabs "lstatus educat4 industrycat10 industrycat4 industrycat5 empstat" //  
 	local meantabs "annual_wage1 hourly_wage*"
 	local sumtabs "obs_* weight_emp"
 	//local mediantabs "annual_wage1 hourly_wage"
-	local countries "MYS PHL IDN MNG VNM THA"  //  
+	local countries "MYS"  // MYS PHL   
 	local measure "mean" // 
 	*----------------------------------------------------*
 	** Pt 1. Different Disaggregations and tabulations  **
@@ -24,7 +24,7 @@
 		//local cnt "MYS"
 		use "${clone}/01_harmonization/011_rawdata/`cnt'/final_panel_`cnt'.dta", clear
 		noi di "Reading `cnt'"
-		
+		gen weight_emp = weight if module != "SWS"
 		
 		
 		* Start Row Number (for saving to excel later)
@@ -32,7 +32,7 @@
 	
 		* Run analysis for each selected subgroup 
 		foreach agg in `disaggregations' {
-			preserve
+			//preserve
 			noi di "trying `agg'.."
 
 			* Tabstat per result (factor variable)
@@ -127,8 +127,12 @@
 			merge m:1 countrycode year using "${clone}/01_harmonization/011_rawdata/cpiicp.dta", keep(matched) keepusing(fp_cpi_totl) nogen
 			
 			noi di "Step 2 Done: Merge CPI from WDI"
+			}
+		}
+	}
+	
 					* Save the file 
-					export excel using "${clone}/01_harmonization/013_outputs/tabstats_`m'.xlsx", `saveopt' sheet("`cnt'", modify) cell(A`i')
+					export excel using "${clone}/01_harmonization/013_outputs/tabstats_`m'.xlsx", `saveopt' sheet("`cnt'_data", modify) cell(A`i')
 					
 				* Next subgroup				
 				restore

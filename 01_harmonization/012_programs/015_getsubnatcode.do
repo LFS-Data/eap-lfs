@@ -52,11 +52,11 @@
 					local dist_no 4
 				}
 			
-			levelsof year, local(yr)
+			//levelsof year, local(yr)
 			
 			
-			foreach y in `yr' {
-
+			//foreach y in `yr' {
+			cap {
 				noi di "currently `y'"
 				preserve 
 				keep if year == `y'
@@ -70,6 +70,10 @@
 				append using `subnat'
 				save `subnat', replace
 				restore
+			//}
+			}
+			if _rc != 0 {
+				noi di "`c' not harmonized"
 			}
 			
 			use `subnat', clear

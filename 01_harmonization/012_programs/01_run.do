@@ -13,7 +13,7 @@
 	
 	* Subtask 011: Harmonize any problematic variables from EAP LFS (WIP)
 	* This will come for new incoming data 
-	//do "${clone}/01_harmonization/012_programs/011_raw_to_eapce.do"
+	do "${clone}/01_harmonization/012_programs/011_raw_to_eapce.do"
 	
 	* Subtask 012: Harmonize EAP-CE data to GLD
 	do "${clone}/01_harmonization/012_programs/012_eapce_to_gld.do"	

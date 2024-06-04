@@ -18,7 +18,7 @@
 	* Commented below is the command to retrieve this.
 	//datalibweb, country(Support) year(2005) type(GMD) surveyid(Support_2005_CPI_v10_M_v01_A_GMD) filename(Support_2005_CPI_v10_M_v01_A_GMD_CPIICP.dta)
 	
-	wbopendata, indicator(fp.cpi.totl) long
+	wbopendata, indicator(fp.cpi.totl) long clear
 	keep if year >= 1985
 	
 	save "${clone}/01_harmonization/011_rawdata/cpiicp.dta", replace 
@@ -26,17 +26,17 @@
 	
 	clear
 	* Save an empty file to append the surveys to
-	//save "${clone}/01_harmonization/011_rawdata/gld_panel_IDN.dta", replace emptyok
+	save "${clone}/01_harmonization/011_rawdata/IDN/gld_panel_IDN.dta", replace emptyok
 	save "${clone}/01_harmonization/011_rawdata/MNG/gld_panel_MNG.dta", replace emptyok
-	//save "${clone}/01_harmonization/011_rawdata/PHL/gld_panel_PHL.dta", replace emptyok
-	//save "${clone}/01_harmonization/011_rawdata/THA/gld_panel_THA.dta", replace emptyok
+	save "${clone}/01_harmonization/011_rawdata/PHL/gld_panel_PHL.dta", replace emptyok
+	save "${clone}/01_harmonization/011_rawdata/THA/gld_panel_THA.dta", replace emptyok
 	}
 	
 	* Catalog_GMD
 	* -- Step 1. Read the Catalog of all interested Data -- *
-	import excel "${clone}/00_documentation/EAP_Data_catalog.xlsx", clear firstrow sheet("Catalog_GLD") cellrange(A2:I247)
+	import excel "${clone}/00_documentation/EAP_Data_catalog.xlsx", clear firstrow sheet("Catalog_GLD") cellrange(A2:I220)
 
-	keep if country == "MNG"
+//	keep if country == "MNG"
 	keep if datalibweb == 1 & Public == "Yes" 
 
 	* -- Step 2. Run each of the surveys in the catalog -- *
