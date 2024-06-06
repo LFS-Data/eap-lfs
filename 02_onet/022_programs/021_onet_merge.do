@@ -283,7 +283,7 @@
 
 	tempfile temp 
 	save `temp', replace
-	
+	e
 	*--------------------------------------------------------*
 	** 3. SOC 2010 to ISCO-08 							 	**
 	*--------------------------------------------------------*
@@ -432,6 +432,48 @@
 	
 	save "${clone}/02_onet/023_outputs/isco_digitalscore_2d_${select_ver}.dta", replace
 
+	** ---------------- ----------------------------------------------------**
+	* 6. 4 digit classification + merge with AI aExposure and Automatability *
+	** -------------------------------------------------------------------- **
+	global ai "C:/Users/`c(username)'/Github/AIOE"
+	global automatability "${flagship}/5. joint works/STCs/Karan Singh/02 Data/Karan_data"
+	cap confirm file "${clone}/02_onet/021_rawdata/AIOE_DataAppendix_A.dta"
+	if _rc != 0 {
+	
+	* soccode 
+	import excel using "${ai}/AIOE_DataAppendix.xlsx", sheet("Appendix A") clear firstrow
+	
+	rename *, lower 
+	
+	save "${clone}/02_onet/021_rawdata/AIOE_DataAppendix_A.dta", replace
+		
+	import excel using "${automatability}/Frey_Osborne_2017.xlsx", sheet("Table 16") clear firstrow
+	
+	rename *, lower
+	
+	save "${clone}/02_onet/021_rawdata/frey_osborne_2017_table16.dta", replace
+	* soccode 
+	
+	}
+	
+	use "${clone}/02_onet/023_outputs/soc_isco_digitalscore.dta", clear
+	
+	ren soc10_6d soccode
+	
+	merge m:1 soccode using "${clone}/02_onet/021_rawdata/AIOE_DataAppendix_A.dta", nogen keep(matched master) keepusing(aioe)
+	merge m:1 soccode using "${clone}/02_onet/021_rawdata/frey_osborne_2017_table16.dta", nogen keep(matched master) keepusing(probability)
+	
+	ren soccode soc10_6d
+	ren probability automate_pr
+	lab var aioe "AI Exposure"
+	lab var automate_pr "Automatability"
+	
+	sort year_onet year isco08code
+
+	save "${clone}/02_onet/023_outputs/soc_isco_digital_all.dta", replace
+
+	
+	
 	/* WIP
 	** ---------------- --------------------------**
 	* 5. Wide Version to be Merged with Microdata  *

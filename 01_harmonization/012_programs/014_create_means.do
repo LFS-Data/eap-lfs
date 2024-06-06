@@ -12,7 +12,7 @@
 	local meantabs "annual_wage1 hourly_wage*"
 	local sumtabs "obs_* weight_emp"
 	//local mediantabs "annual_wage1 hourly_wage"
-	local countries "MYS"  // MYS PHL   
+	local countries "IDN MYS PHL MNG THA VNM"  // MYS PHL   
 	local measure "mean" // 
 	*----------------------------------------------------*
 	** Pt 1. Different Disaggregations and tabulations  **
@@ -32,7 +32,7 @@
 	
 		* Run analysis for each selected subgroup 
 		foreach agg in `disaggregations' {
-			//preserve
+			preserve
 			noi di "trying `agg'.."
 
 			* Tabstat per result (factor variable)
@@ -127,9 +127,9 @@
 			merge m:1 countrycode year using "${clone}/01_harmonization/011_rawdata/cpiicp.dta", keep(matched) keepusing(fp_cpi_totl) nogen
 			
 			noi di "Step 2 Done: Merge CPI from WDI"
-			}
-		}
-	}
+			
+		
+	
 	
 					* Save the file 
 					export excel using "${clone}/01_harmonization/013_outputs/tabstats_`m'.xlsx", `saveopt' sheet("`cnt'_data", modify) cell(A`i')

@@ -5,7 +5,7 @@
 *- 
 *------------------------------------------------------------------*
 
-	local countries "PHL IDN MNG VNM THA MYS" // PHL IDN MNG VNM THA MYS
+	local countries "THA MYS" // PHL IDN MNG VNM THA MYS
 	//cd "${clone}\01_harmonization\011_rawdata\OTHER"
 	//local files: dir . files "*dta"
 		*----------------------------------------------------*
@@ -79,6 +79,9 @@
 		*Subset thailand, datset too big
 		if "`cnt'" == "THA" {
 			cap gen module = "GLD"
+			drop subnatid1 
+			ren subnatid2 subnatid1 
+			destring subnatid1, replace force
 		//keep if inlist(year, 1985, 1990, 1995, 2000, 2005, 2010, 2015,2020,2021,2022)
 		}
 		
@@ -119,6 +122,27 @@
 		gen industrycat_isic2 = substr(industrycat_isic,1,2)
 		lab var industrycat_isic2 "ISIC at 2 digit"
 		*</_industrycat_isic2_>*
+		
+		tostring isic4_4, replace
+//		destring isic4_4 //, gen(temp)
+		gen digits = 1 if strmatch(isic4_4, "*000")
+		replace digits = 2 if strmatch(isic4_4, "*00")
+		replace isic4_4 = "" if isic4_4 == "." | inlist(digits,1,2)
+
+		tostring isic4_2, replace
+		replace isic4_2 = "" if isic4_2 == "." | inlist(digits,1)
+
+		drop digits 
+		tostring isco08_4, replace 
+		gen digits = 1 if strmatch(isco08_4, "*000")
+		replace digits =2 if strmatch(isco08_4, "*00")
+		
+		replace isco08_4 = "" if isco08_4 == "." | inlist(digits,1,2)
+		replace isco08_4 = "" if isco08_4 == "." | inlist(digits,1)
+		
+		destring isco08* isic4_*, replace
+		drop digits
+
 /*
 		*<_industrycat_isic2_2_>*
 		qui cap sum industrycat_isic_2 
@@ -241,6 +265,7 @@
 		replace annual_wage2 = 0 if annual_wage2 == .
 		
 		gen annual_wage =(annual_wage1 + annual_wage2)
+		replace annual_wage1 = . if annual_wage1 == 0
 		*</_annual_wage_>					
 		
 		*<_hourly_wage_>	
@@ -250,12 +275,14 @@
 		destring hourly_wage*, replace
 		foreach w in 1 2 {
 		replace hourly_wage`w' = annual_wage`w'/(whours_`w'*52)
+		replace hourly_wage`w' = . if hourly_wage`w'==0 
 		}
 		
 		replace hourly_wage2 = 0 if hourly_wage2 == .
 		
 		* don't gen if already exists (eg., idn)
 		cap gen hourly_wage =(hourly_wage1 + hourly_wage2)
+		
 		*</_hourly_wage_>	
 
 		*<_obs_annual_>	
@@ -288,21 +315,8 @@
 		destring occup_code, replace
 		cap drop n3_2 n31_2 n3 
 		
-		tostring isic4_4, replace
-		destring isic4_4, gen(temp)
-		replace isic4_4 = substr(isic4_4,1,1) if temp < 1000
-		destring isic4_2, gen(temp2)
-		tostring isic4_2, gen(temp2)
-		replace temp2 = substr(temp2,1,1) if isic4_1 == .
-		destring temp2, replace
-		replace isic4_1 = temp2 if isic4_1 == .
-		drop temp temp2
-		tostring isco08_2, gen(temp)
-		replace temp = substr(temp,1,1)
-		destring temp, replace
-		replace isco08_1 = temp if isco08_1 == .
-		drop temp
 		
+		* Label values 
 		lab_vals
 		save "`outputdir'/final_panel_`cnt'", replace
 	* Next country

@@ -57,6 +57,6 @@
 	}
 	sort group subgroup year
 	
-//	export excel "${clone}/01_harmonization/013_outputs/tabstats_mean.xlsx", sheet("`cnt'", modify) firstrow(variable) 
+	export excel "${clone}/01_harmonization/013_outputs/tabstats_mean.xlsx", sheet("`cnt'", modify) firstrow(variable) 
 	
 	}
