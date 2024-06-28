@@ -116,7 +116,7 @@
 	bysort code agefrom (year): g growth_rate=(reading_ipolate[_n]-reading_ipolate[_n-1])/reading_ipolate[_n-1] if _n!=1 & reading_ipolate!=. 
 
 	* Calculate one version that includes all the countries
-	quietly: summarize growth_rate if growth_rate >0  & agefrom == 15, d 
+	summarize growth_rate if growth_rate >0  & agefrom == 15, d 
 	foreach p in 50 5 95 {
 		local full`p' = r(p`p')
 		gen full_p`p' = `full`p''

@@ -22,7 +22,7 @@
 	use "${idn_raw}/LFS-2023/sak23aug_coding.dta", clear
 	local idvars "code year harmonization module psu strata weight pid subnatid*"
 	local demovars "male age educat4"
-	local lfsvars "whours empstat industry* isic* isco* wage* *wage occup_* isco08* lstatus"
+	local lfsvars "whours empstat industry* isic* wage* *wage occup_* lstatus"
 	
 	*----------------------*
 	* ID Vars 
@@ -98,13 +98,10 @@
 
 	
 	* Occupation 
-	foreach var in occup_code occup_isco isco08_4 isco08_2 {
+	foreach var in occup_code occup_isco {
 	gen `var'= worktype 
 	}
 	
-	replace isco08_4 = isco08_4*1000
-	replace isco08_2 = isco08_2*10
-	tostring isco08_*, replace
 	* Labor force status 
 	* r31a - 1) looked for work in the past week 2) didnt 
 	gen lstatus = 3 if r31a == 2 & empstat == . 
@@ -169,7 +166,7 @@
 	
 	local idvars "code year harmonization module psu weight hhsize hhid pid"
 	local demovars "male age educat4"
-	local lfsvars "whours empstat industry* isic* isco* wage* *wage occup_* isco08* lstatus"
+	local lfsvars "whours empstat industry* isic* isco* wage* *wage occup_* lstatus"
 	
 	*----------------------*
 	* ID vars
@@ -224,8 +221,8 @@
 	tostring occup_code, gen(occup_isco)
 	replace occup_isco = "0" + occup_isco if occup_code <= 3
 	
-	gen isco08_2 = occup_isco 
-	gen isco08_4 = occup_isco + "00"
+	//gen isco08_2 = occup_isco 
+	//gen isco08_4 = .
 	
 	* Occupation Skill (occup_skill)
 	gen occup_skill = . 

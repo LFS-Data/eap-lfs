@@ -4,8 +4,14 @@
 *- Last Modified: Yi Ning Wong on 4/17/2024
 *- 
 *------------------------------------------------------------------*
-
-	local countries "THA MYS" // PHL IDN MNG VNM THA MYS
+	//* Harmonize MSIC to ISIC DONE, Check this 
+	* check the ISIC 4 to 2 digit non matching 
+	* fix the isco 1 digit
+	* Philippines (2010-2019): "subnatid1" missing in 2020 (CANT DO THIS), isco08 missing (pufc14_procc)? 
+	* Indonesia (2011-2019): problems with number of workers in manufacturing (needs correction): too high in 2010, missing in 2019. At the moment 2010 excluded.
+	
+	
+	local countries "PHL IDN MNG VNM THA MYS" // PHL IDN MNG VNM THA MYS
 	//cd "${clone}\01_harmonization\011_rawdata\OTHER"
 	//local files: dir . files "*dta"
 		*----------------------------------------------------*
@@ -14,12 +20,14 @@
 		qui foreach cnt in `countries' `files' {
 		* The row number in which output will start
 		if ("`cnt'" == "THA" | "`cnt'" == "MYS" | "`cnt'" == "PHL"| "`cnt'" ==  "VNM" | "`cnt'" == "IDN" | "`cnt'" == "MNG") {
+//local cnt "IDN"
+			local cnt "IDN"
 			local inputdir "${clone}/01_harmonization/011_rawdata/`cnt'"
 			local inputfile "gld_panel_`cnt'.dta"
 			local outputdir "`inputdir'"
 			//append using "`inputdir'/LFS_`cnt'.dta"
-
 			
+			use "`inputdir'/`inputfile'", clear
 
 			}
 			else {
@@ -28,7 +36,10 @@
 				local outputdir "`inputdir'/harmonized"
 			}
 		use "`inputdir'/`inputfile'", clear
-	
+		local cnt "IDN"
+			local inputdir "${clone}/01_harmonization/011_rawdata/`cnt'"
+			local inputfile "gld_panel_`cnt'.dta"
+			local outputdir "`inputdir'"	
 		* Small cleaning
 		destring year age, replace
 		cap drop migrated_*
@@ -49,8 +60,7 @@
 		drop subnatid* 
 		rename (province district) (subnatid1 subnatid2)
 		
-		cap gen occup_code = occup_isco
-		destring occup_code, replace
+
 		foreach i in 1 2 {
 			tostring subnatid`i', replace
 			split subnatid`i', parse(" - ") 
@@ -73,7 +83,9 @@
 		if ("`cnt'"=="IDN") {
 			replace occup_skill = . if occup_skill == 10
 		}
-
+		cap drop occup_code 
+		cap gen occup_code = occup_isco
+		destring occup_code, replace
 		* Suspect about harmonized data in IDN 1997 and 2012, remove for now 
 
 		*Subset thailand, datset too big
@@ -86,11 +98,10 @@
 		}
 		
 	
-		* Harmonize across ISCO versions 
+		* Harmonize across ISCO versions (Only available for 4 digits)
 		*<_isco08_4_>*
 		iscogen isco08 = isco08(occup_isco) if isco_version=="isco_1988", from(isco88) nolabel
 		iscogen isco68 = isco08(occup_isco) if isco_version=="isco_1968", from(isco68) nolabel
-
 		replace isco08 = isco68 if isco_version=="isco_1968"
 		tostring isco08, replace
 		drop isco68
@@ -101,15 +112,17 @@
 
 		*<_isco08_2_>*		
 		cap gen isco08_2 = substr(isco08_4,1,2)
+		
+	
 		lab var isco08_2 "ISCO-08 at 2-digit "
 		*</_isco08_2_>*
 		
 		*<_isco08_1_>*		
-		cap gen isco08_1 = substr(isco08_4,1,1)
+		//cap gen isco08_1 = substr(isco08_4,1,1)
+		gen isco08_1 = substr(isco08_2,1,1) //if isco08_1 == ""
 		lab var isco08_1 "ISCO-08 at 1-digit "
 		
 		destring isco08*, replace
-		replace isco08_1 = 0 if isco08_4 < 1000
 		*</_isco08_1_>*
 		
 		*<_isicgen_>*
@@ -123,26 +136,46 @@
 		lab var industrycat_isic2 "ISIC at 2 digit"
 		*</_industrycat_isic2_>*
 		
-		tostring isic4_4, replace
-//		destring isic4_4 //, gen(temp)
-		gen digits = 1 if strmatch(isic4_4, "*000")
-		replace digits = 2 if strmatch(isic4_4, "*00")
-		replace isic4_4 = "" if isic4_4 == "." | inlist(digits,1,2)
+		* First case: 2 digits
+		replace isic4_4 = . if isic4_4 < 100
+		tostring isic4_4, gen(temp)
+		* Second case: digits with trailing 0s
+		gen digits = 1 if strmatch(temp, "*000")
+		replace digits = 2 if strmatch(temp, "*00") & digits != 1
+		replace isic4_4 = . if inlist(digits,1,2)
+		replace isic4_2 = . if inlist(digits,1)
+		replace isic4_1 = 0 if isic4_2 < 10
+		replace isic4_1 = isic4_2 / 10 if isic4_1 == . 
+		replace isic4_1 = floor(isic4_1) 
 
-		tostring isic4_2, replace
-		replace isic4_2 = "" if isic4_2 == "." | inlist(digits,1)
-
-		drop digits 
-		tostring isco08_4, replace 
-		gen digits = 1 if strmatch(isco08_4, "*000")
-		replace digits =2 if strmatch(isco08_4, "*00")
+		** ISCO NOW
+		* First case: 2 digits
+		replace isco08_4 = . if isco08_4 < 100
 		
-		replace isco08_4 = "" if isco08_4 == "." | inlist(digits,1,2)
-		replace isco08_4 = "" if isco08_4 == "." | inlist(digits,1)
+		drop temp digits
+		tostring isco08_4, gen(temp)
+		gen digits = 1 if strmatch(temp, "*000")
+		replace digits = 2 if strmatch(temp, "*00") & digits != 1
 		
-		destring isco08* isic4_*, replace
-		drop digits
+		replace isco08_4 = . if inlist(digits,1,2)
+		replace isco08_2 = . if inlist(digits,1)
+		replace isco08_1 = 0 if isco08_2 < 10
+		replace isco08_1 = isco08_1 / 10 if isco08_1 == . 
+		replace isco08_1 = floor(isco08_1) 
+		
+		* 2 digit are consistent across ISCO88 to 08 versions
+		replace isco08_2 = occup_code if isco_version == "isco_1988" & occup_code < 100 
+		* Remove the one digit industry code
+		replace isco08_2 = . if (isco08_2 > 3 & isco08_2 < 10) | (isco08_4 < 10 )
 
+		
+	
+		drop temp digits		
+		gen dif = isic4_4/100
+		replace dif = floor(dif)
+		replace isic4_2 = dif if dif != isic4_2 & dif != .
+		
+		
 /*
 		*<_industrycat_isic2_2_>*
 		qui cap sum industrycat_isic_2 
@@ -318,6 +351,12 @@
 		
 		* Label values 
 		lab_vals
+		
+		local cnt "IDN"
+		local inputdir "${clone}/01_harmonization/011_rawdata/`cnt'"
+		local inputfile "gld_panel_`cnt'.dta"
+		local outputdir "`inputdir'"
+		
 		save "`outputdir'/final_panel_`cnt'", replace
 	* Next country
 	}
@@ -341,7 +380,12 @@
 		cap drop survey
 		tostring pid, replace
 		keep code hhid pid year weight age male educat3 educat4 lstatus empstat industrycat10 industrycat5 occup_skill wage_no_compen_1 unitwage_1 whours_1 subnatid1 isco08_* isic4_* higher_educ annual_wage1 hourly_wage1 
+		
+			gen dif = isic4_4/100
+		replace dif = floor(dif)
+		replace isic4_2 = dif if dif != isic4_2 & dif != .
 
+		replace code = "MYS" if code == ""
 		append using "${clone}/01_harmonization/011_rawdata/final_panel_full.dta"
 		save "${clone}/01_harmonization/011_rawdata/final_panel_full.dta", replace
 
@@ -352,8 +396,10 @@
 	drop if year <= 2000
 	
 	order code year pid subnatid1 weight age male educat3 educat4 higher_educ lstatus empstat wage_no_compen_1 unitwage_1 whours_1 annual_wage1 hourly_wage1 isco08_* occup_skill isic4_* industrycat5 industrycat10 
+
 	
 	save "${clone}/01_harmonization/011_rawdata/final_panel_2000-2023.dta", replace
+	save "${flagship}/1. working docs/1.3. data & charts/data/final_panel_2000-2023.dta", replace
 
 	restore 
 	

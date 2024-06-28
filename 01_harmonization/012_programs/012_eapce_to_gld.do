@@ -30,6 +30,17 @@
 	
 	*<_industrycat10_>		
 	ren indus_code industrycat_isic
+	
+	gen msic08 =industrycat_isic/10
+	replace msic08 = floor(msic08)
+
+	tempfile mys 
+	save `mys', replace 
+	
+	import excel "${clone}/01_harmonization/011_rawdata/msic08_isic4.xlsx", firstrow clear
+
+	merge 1:m msic08 using `mys', keep(matched using)
+	
 	* At 1 digit level, MSIC to ISIC Rev 4 are the same:
 	* https://jtksm.mohr.gov.my/sites/default/files/2022-12/msic_2008_ver_1.0.pdf (Appendix 2)
 	* Industry (10)
@@ -104,8 +115,6 @@
 	*<_occup_isco_>	
 	*</_occup_isco_>		
 
-
-
 	*<_occup_skill_>		
 	* Skill and industry categorized by standard isco recall defined by GLD, example:
 	* https://github.com/worldbank/gld/blob/main/GLD/IDN/IDN_2019_SAKERNAS/IDN_2019_Sakernas_v02_M_v06_A_GLD/Programs/IDN_2019_Sakernas_v02_M_v06_A_GLD_ALL.do
@@ -152,6 +161,17 @@
 	}
 	*</_industrycat10_>		
 	
+	gen msic08 =industrycat_isic/10
+	replace msic08 = floor(msic08)
+
+	tempfile mys 
+	save `mys', replace 
+	
+	import excel "${clone}/01_harmonization/011_rawdata/msic08_isic4.xlsx", firstrow clear
+
+	merge 1:m msic08 using `mys', keep(matched using)
+	
+	
 	*<_industrycat4_>		
 	* Industry (4)
 	gen byte industrycat4 = industrycat10
@@ -184,7 +204,7 @@
 	
 	
 	local idvars "code harmonization module subnatid1 pid ssu male year age hhid"
-	local harmonized "educat* empstat isco_version occup_* isco08_2 isco08_4 isic_version industrycat* whours unitwage wage_no_compen weight lstatus"
+	local harmonized "educat* empstat isco_version occup_* isco08_2 isco08_4 isic_version industrycat* whours unitwage wage_no_compen weight lstatus msic08"
 	
 	keep `idvars' `harmonized'
 	order `idvars' `harmonized'
@@ -345,7 +365,7 @@
 	rename id pid
 	
 	local idvars "code harmonization module subnatid1 pid male year age"
-	local harmonized "educat* empstat isco_version occup_code occup_isco occup_skill isco08_2 isco08_4 isic_version industrycat* whours unitwage wage_no_compen weight lstatus"
+	local harmonized "educat* empstat isco_version occup_code occup_isco occup_skill isco08_2 isco08_4 isic_version industrycat* whours unitwage wage_no_compen weight lstatus "
 	
 	
 	keep `idvars' `harmonized'

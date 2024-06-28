@@ -78,12 +78,6 @@
 	rename *, lower
 	rename (knowledgeim knowledgelv workactivityim workactivitylv) (kn_im_raw kn_lv_raw wa_im_raw wa_lv_raw)
 	
-	* Categorize digital by levels 
-	gen digitalskill = 0 if digitalscore < 33
-	replace digitalskill = 1 if digitalscore >= 33 & digitalscore <= 60
-	replace digitalskill = 2 if digitalscore >60
-	label define lbl_dig 0 "Low" 1 "Medium" 2 "High"
-	label values digitalskill lbl_dig
 		
 	gen soccode = substr(onetsoccode,1,7)	
 	
@@ -277,13 +271,22 @@
 	append using `onet2009'
 	append using `onet2010'
 	
-	order year_onet year onet soc10 *raw *scale digitalscore digitalskill
+	order year_onet year onet soc10 *raw *scale digitalscore
 	
 	gen soc10_6d = substr(soc10,1,7)
 
+	* Get the mean digital score by soc10-6d 
+	egen group = group(onet soc10_6d), label
+	collapse (mean) wa_im_raw wa_lv_raw kn_im_raw kn_lv_raw wa_im_scale wa_lv_scale kn_im_scale kn_lv_scale digitalscore, by(group)
+	
+	decode group, gen(grp)
+	split grp, parse(" ")
+	ren (grp1 grp2) (onet soc10_6d)
+	drop grp group
+	e
 	tempfile temp 
 	save `temp', replace
-	e
+	
 	*--------------------------------------------------------*
 	** 3. SOC 2010 to ISCO-08 							 	**
 	*--------------------------------------------------------*
@@ -299,11 +302,16 @@
 
 	merge m:m soc10_6d using `temp' , keep(matched) nogen
 	
+	* Categorize digital by levels 
+	gen digitalskill = 0 if digitalscore < 33
+	replace digitalskill = 1 if digitalscore >= 33 & digitalscore <= 60
+	replace digitalskill = 2 if digitalscore >60
+	label define lbl_dig 0 "Low" 1 "Medium" 2 "High"
+	label values digitalskill lbl_dig
+	
 	** ---------------- **
 	* 4. Beautification  *
 	** ---------------- **
-	lab var year_onet "Year and O*Net Version"
-	lab var year "Year of O*Net Release"
 	lab var onet "O*Net Version"
 	lab var wa_im_scale "Work Activity Importance Scale (1 to 5)"
 	lab var wa_lv_scale "Work Activity Level Scale (0 to 7)"
@@ -311,12 +319,10 @@
 	lab var kn_lv_scale "Knowledge Level Scale (0 to 7)"
 	lab var digitalscore "Digital Score (0 to 100)"
 	lab var digitalskill "Digital Skill (Low Medium High)"
-	lab var onetsoccode "Original SOC Code (All Taxonomies)"
-	lab var original_soc "ONET Taxonomy Year"
-	sort isco08code soc10_6d year_onet original_soc 
+	sort isco08code soc10_6d onet
 	
-	order year_onet year onet original_soc isco* soc10* onetsoccode
-	drop soccode
+	order onet isco* soc10* 
+
 	replace isco08code = ustrtrim(isco08code)
 	
 	save "${clone}/02_onet/023_outputs/soc_isco_digitalscore.dta", replace
@@ -327,15 +333,19 @@
 	import excel "${clone}/02_onet/021_rawdata/ISCO-08 EN Structure and definitions.xlsx", clear firstrow
 	
 	rename *, lower
+	preserve 
+	keep if level == "4"
 	
-	destring isco08code, replace
-	drop if isco08code > 99
-	tostring isco08code, replace
-	
-	rename isco08code isco08_2d
 	tempfile title 
 	save `title', replace
 	
+	restore 
+	
+	keep if level == "2"
+	
+	tempfile title2d 
+	save `title2d', replace
+	/*
 	use "${clone}/02_onet/023_outputs/soc_isco_digitalscore.dta", clear
 	
 
@@ -401,25 +411,7 @@
 		gen level_`measure' = score_`measure'_5_1
 		gen level_s_`measure' = score_`measure'_5_1
 	}
-	* Turn everything into a factor of the first, so it is easier to merge back to the large dataset after
-	/*
-	foreach measure in p50 min max mean {
-	
-		unab m : score_`measure'* 
-	
-		foreach v of local m { 
-			replace `v'= `v'/level_`measure'
-			replace `v' = 0 if `v' == .
-			}
-			
-	unab m : skill_`measure'* 
-	
-		foreach v of local m { 
-			replace `v'= `v'/level_s_`measure'
-			replace `v' = 0 if `v' == .
-			}
-		}
-		*/
+
 	merge m:m isco08_2d using `title', keepusing(titleen) keep(master matched)
 	sort isco08_2d
 	order isco08* title*
@@ -431,7 +423,7 @@
 	keep isco08_2d titleen *_${select_ver}
 	
 	save "${clone}/02_onet/023_outputs/isco_digitalscore_2d_${select_ver}.dta", replace
-
+*/
 	** ---------------- ----------------------------------------------------**
 	* 6. 4 digit classification + merge with AI aExposure and Automatability *
 	** -------------------------------------------------------------------- **
@@ -462,18 +454,39 @@
 	
 	merge m:1 soccode using "${clone}/02_onet/021_rawdata/AIOE_DataAppendix_A.dta", nogen keep(matched master) keepusing(aioe)
 	merge m:1 soccode using "${clone}/02_onet/021_rawdata/frey_osborne_2017_table16.dta", nogen keep(matched master) keepusing(probability)
+	merge m:m isco08code using `title', keepusing(titleen) keep(master matched) nogen
+
 	
 	ren soccode soc10_6d
 	ren probability automate_pr
 	lab var aioe "AI Exposure"
 	lab var automate_pr "Automatability"
 	
-	sort year_onet year isco08code
-
+	sort onet isco08code
+	destring onet, replace
+	
 	save "${clone}/02_onet/023_outputs/soc_isco_digital_all.dta", replace
+	
+	* 2 digit 
+	replace isco08code = substr(isco08code, 1,2)
+	egen group = group(onet isco08code), label
+	collapse (mean) wa_im_raw wa_lv_raw kn_im_raw kn_lv_raw wa_im_scale wa_lv_scale kn_im_scale kn_lv_scale digitalscore aioe automate_pr, by(group)
+	
+	decode group, gen(grp)
+	split grp, parse(" ")
+	ren (grp1 grp2) (onet isco08code)
+	drop grp group
 
-	
-	
+	merge m:m isco08code using `title2d', keepusing(titleen) keep(master matched) nogen
+	destring onet, replace
+	order onet isco08code titleen
+	gen digitalskill = 0 if digitalscore < 33
+	replace digitalskill = 1 if digitalscore >= 33 & digitalscore <= 60
+	replace digitalskill = 2 if digitalscore >60
+	label values digitalskill lbl_dig
+	save "${clone}/02_onet/023_outputs/soc_isco_digital_all_2d.dta", replace
+
+	* add name of isco 
 	/* WIP
 	** ---------------- --------------------------**
 	* 5. Wide Version to be Merged with Microdata  *

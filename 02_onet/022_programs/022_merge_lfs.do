@@ -6,55 +6,65 @@
 	*------------------------------------------------------*
 	** Step 1. Different Disaggregations and tabulations  **
 	*----------------------------------------------------*
-	local disaggregations "all" //  male occup_skill agegrp2 empstat formal emprt higher_educ agegrp industrycat5 // educat4 industrycat4 industrycat10 ocusec
-	local factortabs "" //  
-	local meantabs "score_mean* score_p50* score_min* score_max*"
-	local countries "THA MYS PHL IDN MNG VNM"
+	local disaggregations "all digitalskill" //  male occup_skill agegrp2 empstat formal emprt higher_educ agegrp industrycat5 // educat4 industrycat4 industrycat10 ocusec
+	local factortabs "digitalskill" //  
+	local meantabs "digitalscore aioe automate_pr"
+	local countries "THA VNM MYS PHL MNG" // IDN THA VNM MYS PHL MNG
 	cd "${clone}\01_harmonization\011_rawdata\OTHER\harmonized"
 	local files: dir . files "*dta"
 	local measure "mean" //
-	*----------------------------------------------------*
-	** Pt 1. Different Disaggregations and tabulations  **
-	*----------------------------------------------------*
+	global onet_dir "${clone}/02_onet/023_outputs"
+	global onet_ver 24.1
+	
+	* Empty file 
+	clear 
+	save "${onet_dir}/isco_digital_aggs.dta", replace emptyok
+	
+	*------------------------------------------------------*
+	** Step a. Get ILO employment shares from ILO stat    **
+	*------------------------------------------------------*
+	use "${clone}/02_onet/023_outputs/soc_isco_digital_all_2d.dta", clear
+	keep if onet == ${onet_ver}
+	ren isco08code isco08_2
+	
+	destring isco08_2, replace
+	
+	tempfile isco 
+	save `isco', replace
+	
 	foreach m in `measure' {
 		noi di "`m'"
-	qui foreach cnt in `countries' `files' {
+	qui foreach cnt in `countries' { // `files' `ilo'
 		noi di "Reading `cnt'"
 
 		* The row number in which output will start
 		if ("`cnt'" == "THA" | "`cnt'" == "MYS" | "`cnt'" == "PHL"| "`cnt'" ==  "VNM" | "`cnt'" == "IDN" | "`cnt'" == "MNG") {
-			
 		use "${clone}/01_harmonization/011_rawdata/`cnt'/final_panel_`cnt'.dta", clear
+		}
+		else if "`cnt'"  == "ilo" {
+			use `ilo', replace
 		}
 		else {
 			use "${clone}\01_harmonization\011_rawdata\OTHER/harmonized/`cnt'", clear
 			cap gen occup_code = .
 			
 		}
-		
-		
-		* File size too big, subset hte years
-		if "`cnt'" == "PHL" {
-			keep if year >= 2010 | year == 2000 | year == 2005
+		if "`cnt'" == "MYS" {
+			keep if code == "MYS_SWS"
 		}
 		
-		cap gen isco08_2d = substr(occup_isco,1,2)
-		if _rc != 0 {
-			tostring occup_code, gen(isco08_2d) format("%19.0f")
-			replace isco08_2d =substr(isco08_2d,1,2)
-		}
-		keep code year weight isco08_2d `disaggregations' 
+		cap gen all = "all"
+	
+		merge m:1 isco08_2 using `isco', keep(matched master) keepusing(`meantabs' `factortabs') 
 		
+		keep code year weight isco08_2 `disaggregations' `meantabs' `factortabs' annual_wage1
 		destring weight, replace
-		merge m:1 isco08_2d using "${clone}/02_onet/023_outputs/isco_digitalscore_2d.dta", keep(matched master) keepusing(score_*)
-		
-		* Start Row Number (for saving to excel later)
-		local i = 1
+
+
 		* Run analysis for each selected subgroup 
 		foreach agg in `disaggregations' {
 			preserve
 			noi di "trying `agg'.."
-				local agg "all"
 
 			* Tabstat per result (factor variable)
 			if "`factortabs'" != "" {
@@ -75,8 +85,6 @@
 			cap decode `agg', gen(grp)
 				
 			if _rc == 0 {
-				//local agg "all"
-
 				tostring year, replace
 				replace year = year + "_"
 							
@@ -93,14 +101,14 @@
 
 				* Get the mean
 				if "`factortabs'" != "" {			
-				collapse (`m')  val* `meantabs' [pw=weight], by(group)
+				collapse (`m')  val* `meantabs' annual_wage1 weight [pw=weight], by(group)
 				* Replace the labels after collapse 
 				foreach v of var val* `meantabs' {
 					label var `v' `"`l`v''"'
 				}
 				}
 				else {
-				collapse (`m') `meantabs' [pw=weight], by(group)	
+				collapse (`m') `meantabs' weight annual_wage1 [pw=weight], by(group)	
 				* Replace the labels after collapse 
 				foreach v of var  `meantabs' {
 					label var `v' `"`l`v''"'
@@ -109,23 +117,13 @@
 					
 
 				* Split parse the year and the subgroup into two columns
-				noi di "checkpoint"
 				drop if group == ""
 				split group, parse("_")
-				noi di "checkpoint2"
-				
-				* Get the number of unique levels of subgroup-year
-				* Use this to calculate number of rows to add in the excel append
-				qui unique group
-				mat num=r(unique)
-				local num = `r(unique)'
-				di "`num'"
 					
 				* Cleaning
 				sort group
 				gen valdummy = .
-
-				keep  val* `meantabs' group1 group2
+				keep val* `meantabs' annual_wage1 group1 group2 weight 
 				drop valdummy 
 				
 				destring group1, replace
@@ -144,24 +142,19 @@
 				* Denote the subgroup
 				gen group = "`agg'"
 
-					if "`agg'" == "all" {
-						local saveopt "firstrow(varlabels)"
-					}
-					else {
-						local saveopt ""
-					}
-					order countrycode year subgroup group
+				order countrycode year subgroup group
 
 								
 					* Save the file 
 					noi di "`cnt'"
-
-
-					export excel using "${clone}/02_onet/023_outputs/onet.xlsx", `saveopt' sheet("`cnt'", modify) cell(A`i')
+					
+					gen source = "LFS"
+					
+					append using "${onet_dir}/isco_digital_aggs.dta"
+					save "${onet_dir}/isco_digital_aggs.dta", replace
 					
 				* Next subgroup				
 				restore
-				local i= `i'+`num'
 				noi di "Finished aggregating `agg'"
 				}
 				else {
@@ -176,67 +169,11 @@
 	}
 	* Next measure
 	}
-	e
-	*--------------------------------------------------------*
-	** Pt 2. share brdown of isic by year, with industry10  **
-	*--------------------------------------------------------*
-	local countries "IDN THA MNG PHL" 
-
 	
-	qui foreach cnt in `countries' {
-		
-		noi di "Reading `cnt'"
-		
-		use "${clone}/01_harmonization/011_rawdata/gld_panel_`cnt'.dta", clear
-		* Get a grouped aggregate by year and by subgroup
-		replace industrycat_isic = industrycat_isic + "_"
-		
-		tostring year, replace
-		replace year = year + "_"
-						
-		egen agg_group = group(year industrycat_isic industrycat10), label
-		decode agg_group, gen(group)
-
-		gen dummy = 1
-
-		collapse (sum) dummy [w=weight], by(group)
-				
-		* Split parse the year and the subgroup into two columns
-		drop if group == ""
-		split group, parse("_")
-		
-		* Small clean
-		rename (group1 group2 group3 dummy) (year isic ind10 count)
-		drop group
-		
-		* Convert count to share per year
-		tempfile aggs 
-		save `aggs', replace
-		
-		collapse (sum) count, by(year)
-		
-		rename count total
-		
-		merge 1:m year using `aggs', nogen
-
-		gen share = (count / total) * 100
-		
-		* Get the industry labels
-		gen code = substr(isic, 2,2)
-		merge m:1 code using "${clone}/01_harmonization/011_rawdata/ISIC4_2digits.dta", nogen
-		
-		* Cleaning
-		drop if year == ""
-		replace description = "other" if code == ""
-		
-		gen countrycode = "`cnt'"
-		
-		keep countrycode year code description ind10 share 
-		order countrycode year code description ind10 share 
-		
-		* Export results
-		export excel using "${clone}/03_output/tabstats.xlsx", firstrow(varlabels) sheet("ind_`cnt'", modify) 
-
-	* Next country
-	}
+	* Final cleaning
+	use "${onet_dir}/isco_digital_aggs.dta", clear
+	drop if digitalscore == .
 	
+	sort countrycode year group 
+	
+	save "${onet_dir}/isco_digital_aggs.dta", replace

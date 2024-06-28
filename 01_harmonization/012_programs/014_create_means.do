@@ -7,12 +7,12 @@
 	*------------------------------------------------------*
 	** Step 1. Different Disaggregations and tabulations  **
 	*----------------------------------------------------*
-	local disaggregations "all male occup occup_skill educat4 agegrp2 empstat formal emprt higher_educ industrycat10 industrycat4 industrycat5 agegrp ocusec marital " // 
+	local disaggregations "all male occup occup_skill educat4 agegrp2 empstat formal emprt higher_educ industrycat10 industrycat4 industrycat5 agegrp ocusec marital " // all male occup occup_skill educat4 agegrp2 empstat formal emprt higher_educ industrycat10 industrycat4 industrycat5 agegrp ocusec marital 
 	local factortabs "lstatus educat4 industrycat10 industrycat4 industrycat5 empstat" //  
-	local meantabs "annual_wage1 hourly_wage*"
+	local meantabs "annual_wage1 hourly_wage1"
 	local sumtabs "obs_* weight_emp"
 	//local mediantabs "annual_wage1 hourly_wage"
-	local countries "IDN MYS PHL MNG THA VNM"  // MYS PHL   
+	local countries "IDN"  // IDN MYS PHL MNG THA VNM
 	local measure "mean" // 
 	*----------------------------------------------------*
 	** Pt 1. Different Disaggregations and tabulations  **
@@ -21,7 +21,7 @@
 		noi di "`m'"
 	qui foreach cnt in `countries' {
 		* The row number in which output will start
-		//local cnt "MYS"
+		//local cnt "IDN"
 		use "${clone}/01_harmonization/011_rawdata/`cnt'/final_panel_`cnt'.dta", clear
 		noi di "Reading `cnt'"
 		gen weight_emp = weight if module != "SWS"

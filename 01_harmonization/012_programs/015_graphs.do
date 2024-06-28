@@ -3,9 +3,10 @@
 *- Last Modified: Yi Ning Wong on 5/28/2024
 *------------------------------------------------------------------*
 
-	local countries "MNG IDN VNM MYS THA PHL" 
+	local countries "IDN VNM MYS THA PHL MNG" 
 	foreach cnt in `countries' {
-	local cnt "THA"
+		noi di "`cnt'"
+	//local cnt "IDN"
 	import excel "${clone}/01_harmonization/013_outputs/tabstats_mean.xlsx", sheet("`cnt'_data") firstrow clear
 	
 	rename *, lower
@@ -57,6 +58,7 @@
 	}
 	sort group subgroup year
 	
+	drop if hwage_inf == .
 	export excel "${clone}/01_harmonization/013_outputs/tabstats_mean.xlsx", sheet("`cnt'", modify) firstrow(variable) 
 	
 	}
